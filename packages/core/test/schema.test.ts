@@ -76,3 +76,28 @@ describe('flowSchema', () => {
     expect(validate(JSON.parse(JSON.stringify(flow)))).toBe(false);
   });
 });
+
+describe('flowSchema: variables', () => {
+  const flow = (variables: unknown) => ({ ...twoLevelFlow, variables });
+
+  it('accepts variables, with options only on select', () => {
+    expect(
+      validate(
+        flow([
+          { key: 'amount', label: 'Amount', type: 'number', required: true },
+          { key: 'pic.user_id', type: 'user' },
+          { key: 'departmentId', type: 'select', options: ['IT', 'HR'] },
+        ]),
+      ),
+    ).toBe(true);
+  });
+
+  it.each([
+    [[{ key: 'a', type: 'select' }]],
+    [[{ key: 'a', type: 'text', options: ['x'] }]],
+    [[{ key: 'bad key', type: 'text' }]],
+    [[{ key: 'a', type: 'money' }]],
+  ])('rejects %j', (variables) => {
+    expect(validate(flow(variables))).toBe(false);
+  });
+});

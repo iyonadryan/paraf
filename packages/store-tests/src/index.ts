@@ -420,7 +420,7 @@ export function describeStoreContract(name: string, harness: StoreHarness): void
       it('runs a flow end to end, including concurrent approvals and timeouts', async () => {
         const engine = createEngine({ store, now: () => time(0) });
         const supervisors: Record<string, string> = { u7: 's1', s1: 'm1' };
-        engine.registerChain('supervisor', (user) => supervisors[user] ?? null);
+        engine.registerChain('supervisor', (user) => supervisors[user]);
         await engine.publishFlow(flow);
         await engine.publishFlow({ ...flow, name: 'Engine flow v2' });
         expect((await engine.listFlows()).find((f) => f.id === flow.id)?.latestVersion).toBe(2);

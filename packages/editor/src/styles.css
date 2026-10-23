@@ -1,0 +1,1840 @@
+@import '@xyflow/react/dist/style.css';
+
+/*
+ * Paraf editor. Theme it by overriding these variables on .paraf-editor (e.g. .paraf-editor.mine).
+ * The design uses IBM Plex Sans and IBM Plex Mono; load them in your page to match it.
+ */
+.paraf-editor {
+  --paraf-font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --paraf-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --paraf-text: #1a1d23;
+  --paraf-text-2: #3d4450;
+  --paraf-muted: #5b6472;
+  --paraf-canvas: #f4f5f7;
+  --paraf-surface: #ffffff;
+  --paraf-surface-2: #f7f8fa;
+  --paraf-border: #dde1e7;
+  --paraf-border-input: #cdd3dc;
+  --paraf-border-card: #d5dae2;
+  --paraf-border-subtle: #e1e4ea;
+  --paraf-divider: #e6e9ee;
+  --paraf-dashed: #aeb6c2;
+  --paraf-accent: #1f4fd1;
+  --paraf-accent-strong: #163a9e;
+  --paraf-accent-soft: #f4f7fe;
+  --paraf-accent-tint: #e8eefd;
+  --paraf-accent-border: #c9d4f5;
+  --paraf-accent-ring: rgba(31, 79, 209, 0.12);
+  --paraf-chain: #0f6b5c;
+  --paraf-chain-tint: #e6f4f1;
+  --paraf-chain-border: #a9d5cc;
+  --paraf-condition: #8a4b00;
+  --paraf-condition-strong: #b4650a;
+  --paraf-condition-tint: #fff4e5;
+  --paraf-condition-card: #fffbf5;
+  --paraf-condition-border: #ebc58d;
+  --paraf-end: #3d4450;
+  --paraf-end-tint: #eef0f3;
+  --paraf-success: #146c2e;
+  --paraf-success-strong: #2e7d47;
+  --paraf-success-line: #3f9a5a;
+  --paraf-success-bg: #eaf6ee;
+  --paraf-success-border: #9ed3ae;
+  --paraf-danger: #c0362c;
+  --paraf-danger-text: #a32a21;
+  --paraf-danger-bg: #fcedec;
+  --paraf-danger-border: #edb1ab;
+  --paraf-warning: #c77a12;
+  --paraf-warning-text: #6b3a00;
+  --paraf-warning-bg: #fff8ee;
+  --paraf-warning-border: #f5d5a6;
+  --paraf-shadow-menu: 0 12px 32px rgba(26, 29, 35, 0.14);
+  --paraf-radius: 8px;
+  --paraf-radius-card: 10px;
+  --paraf-radius-menu: 12px;
+  --paraf-palette-width: 232px;
+  --paraf-panel-width: 360px;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 480px;
+  overflow: hidden;
+  font-family: var(--paraf-font);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--paraf-text);
+  background: var(--paraf-canvas);
+}
+
+.paraf-editor *,
+.paraf-editor *::before,
+.paraf-editor *::after {
+  box-sizing: border-box;
+}
+
+/* :where keeps the reset weaker than the component rules below. */
+.paraf-editor :where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+}
+
+.paraf-editor input[type='text'],
+.paraf-editor input[type='number'],
+.paraf-editor input[type='search'],
+.paraf-editor input[type='date'],
+.paraf-editor input:not([type]),
+.paraf-editor select,
+.paraf-editor textarea {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 14px;
+  color: var(--paraf-text);
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border-input);
+  border-radius: var(--paraf-radius);
+}
+
+.paraf-editor textarea {
+  height: auto;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.paraf-editor input:focus-visible,
+.paraf-editor select:focus-visible,
+.paraf-editor textarea:focus-visible,
+.paraf-editor button:focus-visible {
+  outline: 2px solid var(--paraf-accent);
+  outline-offset: 1px;
+}
+
+.paraf-editor input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  accent-color: var(--paraf-accent);
+}
+
+.paraf-mono,
+.paraf-editor input.paraf-mono {
+  font-family: var(--paraf-mono);
+  font-size: 13px;
+}
+
+.paraf-hint {
+  font-size: 12px;
+  color: var(--paraf-muted);
+}
+
+.paraf-error {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--paraf-danger-text);
+}
+
+.paraf-strong {
+  font-weight: 600;
+}
+
+.paraf-small {
+  font-size: 12px;
+}
+
+.paraf-overline {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--paraf-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.paraf-divider {
+  height: 1px;
+  margin: 8px 0;
+  background: var(--paraf-divider);
+}
+
+/* Buttons */
+
+.paraf-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  font-weight: 500;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border);
+  border-radius: var(--paraf-radius);
+  cursor: pointer;
+}
+
+.paraf-button:hover:not(:disabled) {
+  border-color: var(--paraf-border-input);
+  background: var(--paraf-surface-2);
+}
+
+.paraf-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.paraf-button--square {
+  width: 36px;
+  padding: 0;
+}
+
+.paraf-button--primary {
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--paraf-accent);
+  border-color: var(--paraf-accent);
+}
+
+.paraf-button--primary:hover:not(:disabled) {
+  background: var(--paraf-accent-strong);
+  border-color: var(--paraf-accent-strong);
+}
+
+.paraf-button--primary:disabled {
+  color: var(--paraf-muted);
+  background: #e6e9ee;
+  border-color: #c9ced6;
+  opacity: 1;
+}
+
+.paraf-button--outline {
+  font-weight: 600;
+  color: var(--paraf-accent);
+  border-color: var(--paraf-accent);
+}
+
+.paraf-button--danger {
+  color: var(--paraf-danger-text);
+}
+
+.paraf-button--icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--paraf-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+}
+
+.paraf-button--link {
+  height: auto;
+  padding: 4px 0;
+  font-size: 12px;
+  color: var(--paraf-accent);
+  background: transparent;
+  border: 0;
+}
+
+.paraf-button--link:hover:not(:disabled) {
+  background: transparent;
+  text-decoration: underline;
+}
+
+.paraf-button--dashed {
+  width: 100%;
+  height: 38px;
+  font-weight: 600;
+  color: var(--paraf-accent);
+  background: var(--paraf-accent-soft);
+  border: 1px dashed var(--paraf-accent);
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-button--plus {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--paraf-text-2);
+  background: var(--paraf-surface);
+  border: 1.5px dashed #8a93a3;
+  border-radius: 50%;
+}
+
+.paraf-button--plus[aria-expanded='true'] {
+  color: #ffffff;
+  background: var(--paraf-accent);
+  border: 2px solid var(--paraf-accent);
+}
+
+/* Header, body, status */
+
+.paraf-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-height: 56px;
+  padding: 8px 20px;
+  background: var(--paraf-surface);
+  border-bottom: 1px solid var(--paraf-border);
+}
+
+.paraf-header__title {
+  font-weight: 600;
+}
+
+.paraf-header__spacer {
+  flex: 1 1 auto;
+}
+
+.paraf-header__warn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--paraf-danger-text);
+}
+
+.paraf-badge {
+  padding: 3px 8px;
+  font-family: var(--paraf-mono);
+  font-size: 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.paraf-badge--neutral {
+  color: var(--paraf-text-2);
+  background: var(--paraf-end-tint);
+  border-color: var(--paraf-border);
+}
+
+.paraf-badge--draft {
+  color: var(--paraf-condition);
+  background: var(--paraf-condition-tint);
+  border-color: var(--paraf-warning-border);
+}
+
+.paraf-badge--danger {
+  font-family: var(--paraf-font);
+  font-weight: 600;
+  color: var(--paraf-danger-text);
+  background: var(--paraf-danger-bg);
+}
+
+.paraf-editor__body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.paraf-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 32px;
+  padding: 0 20px;
+  font-size: 12px;
+  color: var(--paraf-text-2);
+  background: var(--paraf-surface);
+  border-top: 1px solid var(--paraf-border);
+}
+
+.paraf-status__valid,
+.paraf-status__invalid {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.paraf-status__valid {
+  color: var(--paraf-success);
+}
+
+.paraf-status__invalid {
+  padding: 2px 0;
+  font-size: 12px;
+  color: var(--paraf-danger-text);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Palette */
+
+.paraf-palette {
+  display: flex;
+  flex: 0 0 var(--paraf-palette-width);
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 16px;
+  overflow-y: auto;
+  background: var(--paraf-surface);
+  border-right: 1px solid var(--paraf-border);
+}
+
+.paraf-palette__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  text-align: left;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border);
+  border-radius: var(--paraf-radius-card);
+  cursor: grab;
+}
+
+.paraf-palette__item:hover {
+  background: var(--paraf-accent-soft);
+  border-color: var(--paraf-accent-border);
+}
+
+.paraf-palette__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.paraf-tile {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+}
+
+.paraf-tile--approval {
+  color: var(--paraf-accent);
+  background: var(--paraf-accent-tint);
+}
+
+.paraf-tile--approval-chain {
+  color: var(--paraf-chain);
+  background: var(--paraf-chain-tint);
+}
+
+.paraf-tile--condition {
+  color: var(--paraf-condition);
+  background: var(--paraf-condition-tint);
+}
+
+.paraf-tile--end {
+  color: var(--paraf-end);
+  background: var(--paraf-end-tint);
+}
+
+.paraf-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--paraf-text-2);
+}
+
+/* Chips */
+
+.paraf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.paraf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 999px;
+}
+
+.paraf-chip--neutral {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--paraf-canvas);
+  border: 1px solid var(--paraf-border-subtle);
+  border-radius: 6px;
+}
+
+.paraf-chip--accent,
+.paraf-chip--number {
+  color: var(--paraf-accent-strong);
+  background: var(--paraf-accent-tint);
+}
+
+.paraf-chip--select,
+.paraf-chip--date {
+  color: var(--paraf-warning-text);
+  background: var(--paraf-condition-tint);
+}
+
+.paraf-chip--user,
+.paraf-chip--boolean {
+  color: #0b5547;
+  background: var(--paraf-chain-tint);
+}
+
+.paraf-chip--text {
+  color: var(--paraf-text-2);
+  background: var(--paraf-end-tint);
+}
+
+.paraf-chip--dark {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--paraf-text);
+}
+
+.paraf-chip__remove {
+  display: inline-flex;
+  padding: 0;
+  color: var(--paraf-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.paraf-editor .paraf-chip-input {
+  width: 90px;
+  height: 26px;
+  padding: 0 8px;
+  font-size: 12px;
+  border-style: dashed;
+  border-color: var(--paraf-dashed);
+  border-radius: 999px;
+}
+
+/* Side panel */
+
+.paraf-panel {
+  display: flex;
+  flex: 0 0 var(--paraf-panel-width);
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--paraf-surface);
+  border-left: 1px solid var(--paraf-border);
+}
+
+.paraf-panel--wide {
+  flex-basis: 400px;
+}
+
+.paraf-panel__head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--paraf-divider);
+}
+
+.paraf-panel__kind-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.paraf-kind {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--paraf-accent);
+}
+
+.paraf-kind--approval-chain {
+  color: var(--paraf-chain);
+}
+
+.paraf-kind--condition {
+  color: var(--paraf-condition);
+}
+
+.paraf-kind--end,
+.paraf-kind--flow {
+  color: var(--paraf-muted);
+}
+
+.paraf-id-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--paraf-mono);
+  font-size: 11px;
+  color: var(--paraf-muted);
+}
+
+.paraf-editor .paraf-id-field input {
+  width: auto;
+  height: 24px;
+  padding: 0 6px;
+  font-size: 11px;
+  color: var(--paraf-muted);
+  border-color: transparent;
+}
+
+.paraf-editor .paraf-id-field input:hover,
+.paraf-editor .paraf-id-field input:focus {
+  border-color: var(--paraf-border-input);
+}
+
+.paraf-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--paraf-divider);
+}
+
+.paraf-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.paraf-section h4,
+.paraf-section__header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.paraf-field {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.paraf-field > label,
+.paraf-field__label {
+  font-size: 12px;
+  color: var(--paraf-muted);
+}
+
+.paraf-field--error input {
+  border-color: var(--paraf-danger);
+}
+
+.paraf-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.paraf-editor .paraf-input--compact {
+  width: 64px;
+}
+
+.paraf-row > .paraf-field:has(.paraf-input--compact) {
+  flex: 0 0 auto;
+}
+
+.paraf-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.paraf-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.paraf-actions,
+.paraf-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.paraf-actions-row {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.paraf-actions-row--spread {
+  justify-content: space-between;
+}
+
+.paraf-segmented {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--paraf-border-input);
+  border-radius: var(--paraf-radius);
+}
+
+.paraf-segmented button {
+  height: 34px;
+  font-size: 12px;
+  background: var(--paraf-surface);
+  border: 0;
+  cursor: pointer;
+}
+
+.paraf-segmented button + button {
+  border-left: 1px solid var(--paraf-border-input);
+}
+
+.paraf-segmented button[aria-pressed='true'] {
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--paraf-text);
+}
+
+.paraf-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.paraf-toggle__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.paraf-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.paraf-card {
+  padding: 12px;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border-subtle);
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-card--accent {
+  border-color: var(--paraf-accent-border);
+}
+
+.paraf-card--rule {
+  border-color: var(--paraf-condition-border);
+}
+
+.paraf-card--muted {
+  background: var(--paraf-surface-2);
+}
+
+.paraf-rule-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--paraf-condition);
+}
+
+.paraf-empty-card,
+.paraf-empty-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--paraf-text-2);
+  border: 1px dashed #c3c9d2;
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-code {
+  margin: 0;
+  padding: 8px;
+  overflow-x: auto;
+  font-family: var(--paraf-mono);
+  font-size: 12px;
+  background: var(--paraf-surface-2);
+  border-radius: var(--paraf-radius);
+}
+
+.paraf-json {
+  overflow: hidden;
+  border: 1px solid var(--paraf-border-subtle);
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-json summary {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--paraf-text-2);
+  cursor: pointer;
+}
+
+.paraf-json pre {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  font-family: var(--paraf-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: #e6e9ee;
+  background: var(--paraf-text);
+}
+
+/* Approver sources */
+
+.paraf-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.paraf-source {
+  overflow: hidden;
+  border: 1px solid var(--paraf-accent-border);
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-source__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--paraf-accent-soft);
+}
+
+.paraf-source__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.paraf-source__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.paraf-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.paraf-choices legend {
+  margin-bottom: 4px;
+  padding: 0;
+  font-size: 12px;
+  color: var(--paraf-muted);
+}
+
+.paraf-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.paraf-choice--on {
+  background: var(--paraf-accent-soft);
+}
+
+/* Menus */
+
+.paraf-menu-anchor {
+  position: relative;
+}
+
+.paraf-grow {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.paraf-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 6px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--paraf-text);
+  text-align: left;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border-card);
+  border-radius: var(--paraf-radius-menu);
+  box-shadow: var(--paraf-shadow-menu);
+}
+
+.paraf-menu--wide {
+  width: 300px;
+}
+
+.paraf-menu__title {
+  padding: 8px 10px 6px;
+  font-size: 12px;
+  color: var(--paraf-muted);
+}
+
+.paraf-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--paraf-radius);
+  cursor: pointer;
+}
+
+.paraf-menu__item:hover,
+.paraf-menu__item:focus-visible,
+.paraf-option[aria-selected='true'] {
+  background: var(--paraf-accent-soft);
+}
+
+.paraf-menu__item > .paraf-tile {
+  flex-basis: 26px;
+  width: 26px;
+  height: 26px;
+}
+
+.paraf-menu__text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.paraf-menu__name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.paraf-menu__custom {
+  margin-top: 4px;
+  padding: 8px 10px 4px;
+  border-top: 1px solid var(--paraf-divider);
+}
+
+/* Conditions */
+
+.paraf-condition {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.paraf-comparison {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.paraf-comparison__lead {
+  flex: 0 0 auto;
+  width: 40px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.paraf-editor select.paraf-comparison__lead {
+  width: 64px;
+  padding: 0 4px;
+}
+
+.paraf-comparison > select:not(.paraf-comparison__lead) {
+  flex: 0 1 140px;
+}
+
+.paraf-comparison > input {
+  flex: 1 1 100px;
+}
+
+.paraf-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border-input);
+  border-radius: var(--paraf-radius);
+  cursor: pointer;
+}
+
+.paraf-picker[aria-expanded='true'] {
+  border: 2px solid var(--paraf-accent);
+}
+
+.paraf-indent {
+  align-self: flex-start;
+  padding-left: 48px;
+}
+
+/* Variables table */
+
+.paraf-table {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+  border: 1px solid var(--paraf-border-subtle);
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-table th {
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--paraf-muted);
+  background: var(--paraf-surface-2);
+}
+
+.paraf-table td {
+  padding: 6px 10px;
+  border-top: 1px solid var(--paraf-divider);
+}
+
+.paraf-row--selected td {
+  background: var(--paraf-accent-soft);
+}
+
+.paraf-link-cell {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Problems drawer */
+
+.paraf-problems {
+  display: flex;
+  flex-direction: column;
+  max-height: 280px;
+  background: var(--paraf-surface);
+  border-top: 1px solid var(--paraf-border);
+}
+
+.paraf-problems__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--paraf-divider);
+}
+
+.paraf-problems__head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.paraf-problems ul {
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.paraf-problems li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.paraf-problems__text {
+  display: flex;
+  flex: 1 1 360px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.paraf-problems__text b {
+  font-weight: 600;
+}
+
+.paraf-problems__text code {
+  font-family: var(--paraf-mono);
+  font-size: 12px;
+  color: var(--paraf-muted);
+}
+
+.paraf-number {
+  display: inline-flex;
+  flex: 0 0 22px;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--paraf-danger);
+  border-radius: 50%;
+}
+
+/* Dialog */
+
+.paraf-overlay {
+  position: absolute;
+  z-index: 50;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 64px 16px;
+  overflow: auto;
+  background: rgba(26, 29, 35, 0.48);
+}
+
+.paraf-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 600px;
+  overflow: hidden;
+  background: var(--paraf-surface);
+  border-radius: 14px;
+}
+
+.paraf-dialog__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--paraf-divider);
+}
+
+.paraf-dialog__head h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+
+.paraf-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+}
+
+.paraf-dialog__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--paraf-divider);
+}
+
+.paraf-callout {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  line-height: 1.5;
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-callout--info {
+  justify-content: flex-start;
+  color: var(--paraf-text);
+  background: var(--paraf-accent-soft);
+  border: 1px solid var(--paraf-accent-border);
+}
+
+.paraf-callout--info svg {
+  flex: 0 0 18px;
+  margin-top: 2px;
+  color: var(--paraf-accent);
+}
+
+.paraf-callout--success {
+  align-items: center;
+  font-size: 13px;
+  color: var(--paraf-success);
+  background: var(--paraf-success-bg);
+}
+
+.paraf-changes {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--paraf-border-subtle);
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-changes li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.paraf-changes li:last-child {
+  border-bottom: 0;
+}
+
+.paraf-changes__kind {
+  flex: 0 0 64px;
+  font-family: var(--paraf-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.paraf-changes__kind--added {
+  color: var(--paraf-success);
+}
+
+.paraf-changes__kind--changed {
+  color: var(--paraf-condition);
+}
+
+.paraf-changes__kind--removed {
+  color: var(--paraf-danger-text);
+}
+
+/* Canvas */
+
+.paraf-canvas {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--paraf-canvas);
+}
+
+.paraf-canvas .react-flow__edge-textbg {
+  rx: 4;
+}
+
+.paraf-zoom {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border);
+  border-radius: var(--paraf-radius);
+}
+
+.paraf-zoom button {
+  height: 36px;
+  min-width: 36px;
+  padding: 0 8px;
+  font-size: 18px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.paraf-zoom .paraf-zoom__level {
+  font-family: var(--paraf-mono);
+  font-size: 12px;
+  color: var(--paraf-text-2);
+}
+
+.paraf-zoom .paraf-zoom__tidy {
+  padding: 0 12px;
+  font-size: 12px;
+  border-left: 1px solid var(--paraf-border);
+}
+
+.paraf-minimap.react-flow__minimap {
+  overflow: hidden;
+  border: 1px solid var(--paraf-border);
+  border-radius: var(--paraf-radius);
+}
+
+.paraf-start {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--paraf-text);
+  border-radius: 999px;
+}
+
+.paraf-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  color: var(--paraf-text);
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border-card);
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-node--approval-chain {
+  border-color: var(--paraf-chain-border);
+}
+
+.paraf-node--condition {
+  background: var(--paraf-condition-card);
+  border-color: var(--paraf-condition-border);
+}
+
+.paraf-node--end {
+  padding: 0;
+}
+
+.paraf-node--approved {
+  color: var(--paraf-success);
+  background: var(--paraf-success-bg);
+  border-color: var(--paraf-success-border);
+}
+
+.paraf-node--rejected {
+  color: var(--paraf-danger-text);
+  background: var(--paraf-danger-bg);
+  border-color: var(--paraf-danger-border);
+}
+
+.paraf-node--selected {
+  border: 2px solid var(--paraf-accent);
+  box-shadow: 0 0 0 4px var(--paraf-accent-ring);
+}
+
+.paraf-node--condition.paraf-node--selected {
+  border-color: var(--paraf-condition-strong);
+  box-shadow: 0 0 0 4px rgba(180, 101, 10, 0.14);
+}
+
+.paraf-node--invalid {
+  border: 2px solid var(--paraf-danger);
+}
+
+.paraf-node__kind {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--paraf-accent);
+}
+
+.paraf-node--approval-chain .paraf-node__kind {
+  color: var(--paraf-chain);
+}
+
+.paraf-node--condition .paraf-node__kind {
+  color: var(--paraf-condition);
+}
+
+.paraf-node__label {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.paraf-node__line,
+.paraf-node__footer {
+  font-size: 12px;
+  color: var(--paraf-muted);
+}
+
+.paraf-node__footer {
+  font-size: 11px;
+}
+
+.paraf-node__group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  font-size: 12px;
+  background: #f4f6fb;
+  border-radius: 6px;
+}
+
+.paraf-node__end {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  font-weight: 600;
+}
+
+.paraf-node__badge {
+  position: absolute;
+  top: -11px;
+  right: -11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--paraf-danger);
+  border-radius: 50%;
+}
+
+.paraf-handle.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: #8a93a3;
+  border: 2px solid var(--paraf-surface);
+}
+
+.paraf-handle--reject.react-flow__handle {
+  background: var(--paraf-danger);
+}
+
+.paraf-handle--rule.react-flow__handle {
+  background: var(--paraf-condition-strong);
+}
+
+.paraf-handle--hidden.react-flow__handle {
+  opacity: 0;
+}
+
+.paraf-start,
+.paraf-quick-add {
+  /* React Flow turns pointer events off for nodes that cannot be selected or dragged. */
+  pointer-events: all;
+}
+
+.paraf-quick-add {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.paraf-quick-add .paraf-menu {
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: default;
+}
+
+/* Empty state */
+
+.paraf-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px;
+  pointer-events: all;
+  cursor: default;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border);
+  border-radius: 14px;
+}
+
+.paraf-empty__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.paraf-empty__title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.paraf-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paraf-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.paraf-steps__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  color: var(--paraf-text-2);
+  border: 1.5px solid var(--paraf-dashed);
+  border-radius: 50%;
+}
+
+.paraf-steps__mark--done {
+  color: #ffffff;
+  background: var(--paraf-success-strong);
+  border-color: var(--paraf-success-strong);
+}
+
+.paraf-templates {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.paraf-template {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  font-size: 13px;
+  text-align: left;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border);
+  border-radius: var(--paraf-radius-card);
+  cursor: pointer;
+}
+
+.paraf-template:hover {
+  border-color: var(--paraf-accent-border);
+  background: var(--paraf-accent-soft);
+}
+
+/* Progress view */
+
+.paraf-progress__subject {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.paraf-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.paraf-facts div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.paraf-facts dt {
+  font-size: 12px;
+  color: var(--paraf-muted);
+}
+
+.paraf-facts dd {
+  margin: 0;
+}
+
+.paraf-badge--status-pending,
+.paraf-badge--status-in_progress,
+.paraf-badge--status-returned {
+  align-self: flex-start;
+  font-family: var(--paraf-font);
+  font-weight: 600;
+  color: var(--paraf-condition);
+  background: var(--paraf-condition-tint);
+  border-color: var(--paraf-warning-border);
+}
+
+.paraf-badge--status-approved {
+  align-self: flex-start;
+  font-family: var(--paraf-font);
+  font-weight: 600;
+  color: var(--paraf-success);
+  background: var(--paraf-success-bg);
+  border-color: var(--paraf-success-border);
+}
+
+.paraf-badge--status-rejected,
+.paraf-badge--status-cancelled {
+  align-self: flex-start;
+  font-family: var(--paraf-font);
+  font-weight: 600;
+  color: var(--paraf-danger-text);
+  background: var(--paraf-danger-bg);
+  border-color: var(--paraf-danger-border);
+}
+
+.paraf-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: 12px;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border);
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-legend span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.paraf-legend__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.paraf-legend__swatch--done {
+  background: var(--paraf-success-bg);
+  border: 1.5px solid var(--paraf-success-line);
+}
+
+.paraf-legend__swatch--active {
+  background: var(--paraf-condition-tint);
+  border: 1.5px solid var(--paraf-warning);
+}
+
+.paraf-legend__swatch--pending {
+  background: var(--paraf-surface);
+  border: 1.5px dashed var(--paraf-dashed);
+}
+
+.paraf-pnode {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--paraf-surface);
+  border-radius: var(--paraf-radius-card);
+}
+
+.paraf-pnode--end {
+  padding: 0;
+}
+
+.paraf-pnode--done {
+  background: var(--paraf-success-bg);
+  border: 1.5px solid var(--paraf-success-line);
+}
+
+.paraf-pnode--active {
+  background: var(--paraf-warning-bg);
+  border: 2px solid var(--paraf-warning);
+  box-shadow: 0 0 0 4px rgba(199, 122, 18, 0.14);
+}
+
+.paraf-pnode--rejected {
+  background: var(--paraf-danger-bg);
+  border: 1.5px solid var(--paraf-danger);
+}
+
+.paraf-pnode--pending {
+  color: var(--paraf-muted);
+  border: 1.5px dashed var(--paraf-dashed);
+}
+
+.paraf-pnode--end-approved.paraf-pnode--done {
+  color: var(--paraf-success);
+}
+
+.paraf-pnode--end-rejected.paraf-pnode--done {
+  color: var(--paraf-danger-text);
+  background: var(--paraf-danger-bg);
+  border-color: var(--paraf-danger);
+}
+
+.paraf-pnode__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.paraf-pnode__line {
+  font-size: 12px;
+}
+
+.paraf-pnode__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--paraf-canvas);
+  border-radius: 6px;
+}
+
+.paraf-pnode__row--approved,
+.paraf-pnode__row--skipped {
+  color: #1f4d2c;
+  background: var(--paraf-success-bg);
+}
+
+.paraf-pnode__row--active {
+  color: var(--paraf-warning-text);
+  background: #ffecd1;
+}
+
+.paraf-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+
+.paraf-mark--done {
+  color: #ffffff;
+  background: var(--paraf-success-strong);
+}
+
+.paraf-mark--rejected {
+  color: #ffffff;
+  background: var(--paraf-danger);
+}
+
+.paraf-mark--active {
+  color: var(--paraf-warning);
+}
+
+.paraf-timeline {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paraf-timeline__item {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+.paraf-timeline__item::before {
+  position: absolute;
+  top: 16px;
+  bottom: 0;
+  left: 5px;
+  width: 2px;
+  content: '';
+  background: var(--paraf-border-subtle);
+}
+
+.paraf-timeline__item:last-child::before {
+  display: none;
+}
+
+.paraf-timeline__dot {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  background: var(--paraf-text);
+  border-radius: 50%;
+}
+
+.paraf-timeline__dot--done {
+  background: var(--paraf-success-strong);
+}
+
+.paraf-timeline__dot--rejected {
+  background: var(--paraf-danger);
+}
+
+.paraf-timeline__dot--system {
+  background: var(--paraf-surface);
+  border: 2px solid #8a93a3;
+}
+
+.paraf-timeline__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.paraf-timeline__comment {
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--paraf-text-2);
+  background: var(--paraf-canvas);
+  border-radius: var(--paraf-radius);
+}
+
+/* Narrow screens: panels stack under the canvas. */
+@media (max-width: 900px) {
+  .paraf-editor__body {
+    flex-wrap: wrap;
+    overflow-y: auto;
+  }
+
+  .paraf-palette {
+    flex: 1 1 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: 0;
+    border-bottom: 1px solid var(--paraf-border);
+  }
+
+  .paraf-palette .paraf-tips,
+  .paraf-palette .paraf-divider {
+    display: none;
+  }
+
+  .paraf-canvas {
+    flex: 1 1 100%;
+    min-height: 420px;
+  }
+
+  .paraf-panel {
+    flex: 1 1 100%;
+    border-left: 0;
+    border-top: 1px solid var(--paraf-border);
+  }
+}

@@ -10,6 +10,8 @@ export type {
   ConditionExpression,
   ConditionNode,
   ConditionRule,
+  DocumentVariable,
+  DocumentVariableType,
   DuplicateApproverPolicy,
   EmptyApproversPolicy,
   EndNode,
@@ -50,6 +52,12 @@ export { flowSchema } from './schema/flow-schema';
 export { validateFlow } from './validation/validate-flow';
 export type { ValidateFlowOptions } from './validation/validate-flow';
 export type { FlowValidationCode, FlowValidationIssue } from './validation/issues';
+
+export { addDuration, parseDuration } from './duration';
+export type { Duration } from './duration';
+
+export { validateDocument } from './document';
+export type { DocumentProblem } from './document';
 
 export { evaluateCondition } from './condition/evaluate';
 export type { OperatorFunction } from './condition/evaluate';
@@ -103,6 +111,7 @@ export {
   ConcurrencyError,
   ConditionEvaluationError,
   DelegationError,
+  DocumentValidationError,
   EmptyApproversError,
   FlowNotFoundError,
   FlowValidationError,

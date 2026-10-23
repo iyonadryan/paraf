@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["vitest/globals"],
+    "paths": {
+      "@paraf/core": ["../core/src/index.ts"]
+    }
+  },
+  "include": ["src", "test", "*.ts"]
+}

@@ -53,3 +53,7 @@ desktop.ini
 
 # Local files
 prompt-paraf.md
+
+# Playwright
+test-results/
+playwright-report/

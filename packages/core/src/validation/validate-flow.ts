@@ -19,7 +19,22 @@ const SLUG_REGEX = new RegExp(SLUG_PATTERN);
 const BUILTIN_APPROVER_TYPES = ['user', 'field'];
 const NODE_TYPES = ['approval', 'approval-chain', 'condition', 'end'];
 
-const FLOW_FIELDS = ['id', 'version', 'name', 'start', 'resubmitPolicy', 'nodes', 'layout'];
+const FLOW_FIELDS = [
+  'id',
+  'version',
+  'name',
+  'start',
+  'resubmitPolicy',
+  'variables',
+  'nodes',
+  'layout',
+];
+const VARIABLE_FIELDS = ['key', 'label', 'type', 'options', 'required'];
+const VARIABLE_TYPES = ['number', 'text', 'select', 'date', 'boolean', 'user'];
+
+/** Document variable keys: dot-separated identifiers, e.g. `amount` or `pic.user_id`. */
+export const VARIABLE_KEY_PATTERN = '^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*$';
+const VARIABLE_KEY_REGEX = new RegExp(VARIABLE_KEY_PATTERN);
 const GROUP_RULE_FIELDS = [
   'approvers',
   'mode',
@@ -178,6 +193,7 @@ class FlowValidator {
       this.checkGraph(flow, nodes);
     }
 
+    if ('variables' in flow) this.checkVariables(flow.variables);
     if ('layout' in flow) this.checkLayout(flow.layout);
     return this.issues;
   }
@@ -909,6 +925,82 @@ class FlowValidator {
     for (const nodeId of this.nodeIds) {
       if (!done.has(nodeId)) visit(nodeId);
     }
+  }
+
+  private checkVariables(variables: unknown): void {
+    if (!Array.isArray(variables)) {
+      this.report(
+        'INVALID_TYPE',
+        'variables',
+        {},
+        `"variables" must be an array, got ${describe(variables)}.`,
+      );
+      return;
+    }
+    const keys = new Set<string>();
+    variables.forEach((variable: unknown, index) => {
+      const path = `variables[${index}]`;
+      if (!isObject(variable)) {
+        this.report(
+          'INVALID_TYPE',
+          path,
+          {},
+          `Variable #${index + 1} must be an object, got ${describe(variable)}.`,
+        );
+        return;
+      }
+      this.checkUnknownFields(variable, VARIABLE_FIELDS, path, {});
+      if (this.checkString(variable, 'key', `${path}.key`, {}, { required: true })) {
+        const key = variable.key as string;
+        if (!VARIABLE_KEY_REGEX.test(key)) {
+          this.report(
+            'INVALID_VARIABLE_KEY',
+            `${path}.key`,
+            {},
+            `Variable key "${key}" must be a path such as "amount" or "pic.user_id".`,
+          );
+        } else if (keys.has(key)) {
+          this.report(
+            'DUPLICATE_VARIABLE',
+            `${path}.key`,
+            {},
+            `Variable "${key}" is declared more than once.`,
+          );
+        }
+        keys.add(key);
+      }
+      this.checkString(variable, 'label', `${path}.label`, {});
+      if (!('type' in variable)) {
+        this.report('MISSING_FIELD', `${path}.type`, {}, `Variable #${index + 1} needs a "type".`);
+      } else {
+        this.checkEnum(variable, 'type', VARIABLE_TYPES, `${path}.type`, {});
+      }
+      this.checkBoolean(variable, 'required', `${path}.required`, {});
+
+      const options = variable.options;
+      if (variable.type === 'select') {
+        const valid =
+          Array.isArray(options) &&
+          options.length > 0 &&
+          options.every((option) => typeof option === 'string' && option !== '') &&
+          new Set(options).size === options.length;
+        if (!valid) {
+          this.report(
+            'INVALID_OPTIONS',
+            `${path}.options`,
+            {},
+            `A "select" variable needs "options": a non-empty list of distinct, non-empty strings.`,
+          );
+        }
+      } else if ('options' in variable) {
+        this.report(
+          'INVALID_OPTIONS',
+          `${path}.options`,
+          {},
+          `"options" only apply to "select" variables.`,
+        );
+      }
+    });
   }
 
   private checkLayout(layout: unknown): void {

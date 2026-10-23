@@ -1,0 +1,83 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  color: #1a1d23;
+  background: #e6e9ee;
+}
+
+.demo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.demo__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.demo__tabs {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid #cdd3dc;
+  border-radius: 8px;
+}
+
+.demo__tabs button {
+  padding: 6px 14px;
+  font: inherit;
+  background: #ffffff;
+  border: 0;
+  cursor: pointer;
+}
+
+.demo__tabs button[aria-selected='true'] {
+  font-weight: 600;
+  color: #ffffff;
+  background: #1a1d23;
+}
+
+.demo__error {
+  font-weight: 600;
+  color: #a32a21;
+}
+
+.demo__main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 0 12px 12px;
+}
+
+.demo__main > .paraf-editor {
+  flex: 1;
+  border: 1px solid #dde1e7;
+  border-radius: 10px;
+}
+
+.demo__placeholder {
+  margin: auto;
+  color: #5b6472;
+}
+
+.demo-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+}
+
+.demo-crumb {
+  font-size: 14px;
+  color: #5b6472;
+}

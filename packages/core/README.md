@@ -5,7 +5,7 @@ types, JSON Schema, flow validator, in-memory store, and UUID v7 generator. Zero
 dependencies.
 
 > [!WARNING]
-> Early development. Database adapters and the visual editor are not available yet.
+> Early development. The API may still change before `1.0.0`.
 
 ## Run a flow
 
@@ -49,6 +49,29 @@ cron.schedule('*/5 * * * *', () => engine.processTimeouts());
 Other actions: `reject`, `returnForRevision`, `resubmit`, `delegate`, `cancel`, and
 `reresolveApprovers`. Queries: `getInstance`, `findInstances({ subject })`,
 `findPendingForUser` (inbox), and `getHistory` (audit trail).
+
+## Document variables
+
+A flow can declare the document fields it expects. The editor offers them in conditions and
+approver settings, and `start` and `resubmit` check the document against them (throwing a
+`DocumentValidationError` that lists every problem):
+
+```ts
+import { validateDocument } from '@paraf/core';
+
+const variables = [
+  { key: 'amount', label: 'Amount', type: 'number', required: true },
+  { key: 'department', type: 'select', options: ['IT', 'Finance'] },
+  { key: 'pic.user_id', type: 'user' }, // a dotted key reads a nested field
+];
+// flow.variables = variables
+
+validateDocument({ amount: '15' }, variables);
+// [{ key: 'amount', message: 'Amount (amount) must be a number' }]
+```
+
+Types: `number`, `text`, `select` (one of `options`), `date` (ISO 8601), `boolean`, and `user`
+(a user ID). Fields that are not declared are not checked.
 
 ## Validate a flow
 

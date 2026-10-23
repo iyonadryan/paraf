@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@paraf/core": ["../../packages/core/src/index.ts"],
+      "@paraf/editor": ["../../packages/editor/src/index.ts"]
+    }
+  },
+  "include": ["src", "e2e", "*.ts"]
+}

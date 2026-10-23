@@ -1,6 +1,6 @@
 import { DURATION_PATTERN } from '../duration';
 import type { JsonObject } from '../types/json';
-import { SLUG_PATTERN } from '../validation/validate-flow';
+import { SLUG_PATTERN, VARIABLE_KEY_PATTERN } from '../validation/validate-flow';
 
 const ref = (name: string): JsonObject => ({ $ref: `#/$defs/${name}` });
 
@@ -48,6 +48,7 @@ export const flowSchema: JsonObject = {
     name: { type: 'string', minLength: 1 },
     start: ref('nodeRef'),
     resubmitPolicy: { enum: ['restart', 'resume'], default: 'restart' },
+    variables: { type: 'array', items: ref('variable') },
     nodes: {
       type: 'object',
       minProperties: 1,
@@ -68,6 +69,26 @@ export const flowSchema: JsonObject = {
     slug: { type: 'string', pattern: SLUG_PATTERN },
     nodeRef: { type: 'string', minLength: 1 },
     duration: { type: 'string', pattern: DURATION_PATTERN },
+    variable: {
+      type: 'object',
+      required: ['key', 'type'],
+      additionalProperties: false,
+      properties: {
+        key: { type: 'string', pattern: VARIABLE_KEY_PATTERN },
+        label: { type: 'string' },
+        type: { enum: ['number', 'text', 'select', 'date', 'boolean', 'user'] },
+        options: {
+          type: 'array',
+          minItems: 1,
+          uniqueItems: true,
+          items: { type: 'string', minLength: 1 },
+        },
+        required: { type: 'boolean', default: false },
+      },
+      if: { properties: { type: { const: 'select' } } },
+      then: { required: ['options'], properties: { options: true } },
+      else: { not: { required: ['options'], properties: { options: true } } },
+    },
     approverEntry: {
       type: 'object',
       required: ['type'],

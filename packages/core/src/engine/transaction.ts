@@ -4,6 +4,7 @@ import type { OperatorFunction } from '../condition/evaluate';
 import {
   ChainCycleError,
   DelegationError,
+  DocumentValidationError,
   EmptyApproversError,
   InsufficientApproversError,
   InvalidArgumentError,
@@ -37,6 +38,7 @@ import type {
 } from '../types/instance';
 import type { JsonObject } from '../types/json';
 import type { IdGenerator } from '../uuid';
+import { validateDocument } from '../document';
 import { clone } from '../utils/clone';
 import { countedSlots, evaluateStep, requiredApprovals } from './evaluate-step';
 import type {
@@ -318,7 +320,11 @@ export class Transaction {
 
     this.instance.round += 1;
     this.instance.status = 'pending';
-    if (document !== undefined) this.instance.document = clone(document);
+    if (document !== undefined) {
+      const problems = validateDocument(document, this.flow.variables);
+      if (problems.length > 0) throw new DocumentValidationError(problems, this.context);
+      this.instance.document = clone(document);
+    }
     this.record('resubmitted', {
       actorId: userId,
       metadata: { round: this.instance.round, resubmitPolicy: policy },

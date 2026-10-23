@@ -1,3 +1,4 @@
+import type { DocumentProblem } from './document';
 import type { Subject } from './types/instance';
 import type { FlowValidationIssue } from './validation/issues';
 
@@ -127,6 +128,20 @@ export class InvalidStateError extends ActionError {
 export class InvalidArgumentError extends ActionError {
   constructor(message: string, context: ActionErrorContext) {
     super('INVALID_ARGUMENT', message, context);
+  }
+}
+
+/** The document does not match the flow's variables (missing required values, wrong types). */
+export class DocumentValidationError extends ActionError {
+  readonly problems: readonly DocumentProblem[];
+
+  constructor(problems: readonly DocumentProblem[], context: ActionErrorContext) {
+    super(
+      'DOCUMENT_INVALID',
+      `The document is invalid: ${problems.map((problem) => problem.message).join('; ')}`,
+      context,
+    );
+    this.problems = problems;
   }
 }
 

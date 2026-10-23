@@ -69,5 +69,19 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Test (core, MemoryStore, PostgreSQL, MySQL)
+      - name: Test (core, editor, MemoryStore, PostgreSQL, MySQL)
         run: pnpm test:coverage
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter editor-demo exec playwright install --with-deps chromium
+
+      - name: E2E (build the spec example in the editor demo)
+        run: pnpm test:e2e
+
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: examples/editor-demo/test-results
+          if-no-files-found: ignore

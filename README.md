@@ -94,7 +94,7 @@ engine.on('instance.completed', async ({ instance }) => {
 - [x] Approval chains and duplicate approver handling
 - [x] Timeouts and escalation
 - [x] PostgreSQL and MySQL adapters
-- [ ] Visual editor
+- [x] Visual editor and progress view
 - [ ] Docs and first release (`0.1.0`)
 
 ## Contributing
@@ -112,6 +112,14 @@ pnpm changeset   # describe changes to published packages
 
 The adapter tests read `PARAF_POSTGRES_URL` and `PARAF_MYSQL_URL`, defaulting to the
 `docker-compose.yml` databases (ports 55432 and 53306).
+
+The editor demo runs a real engine on a `MemoryStore` in the browser:
+
+```sh
+pnpm --filter editor-demo dev                                # http://localhost:5199
+pnpm --filter editor-demo exec playwright install chromium   # once
+pnpm test:e2e   # builds the example flow through the UI, exports and re-imports it
+```
 
 ## License
 

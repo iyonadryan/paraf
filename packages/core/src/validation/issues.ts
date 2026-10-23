@@ -61,7 +61,13 @@ export type FlowValidationCode =
   /** `maxLevels` is missing or not an integer >= 1. */
   | 'INVALID_MAX_LEVELS'
   /** `timeout.after` is not an ISO 8601 duration. */
-  | 'INVALID_DURATION';
+  | 'INVALID_DURATION'
+  /** A document variable key that is not a dot-separated path of identifiers. */
+  | 'INVALID_VARIABLE_KEY'
+  /** Two document variables share a key. */
+  | 'DUPLICATE_VARIABLE'
+  /** A `select` variable without options (or options on another type). */
+  | 'INVALID_OPTIONS';
 
 /** One problem found by `validateFlow`. */
 export interface FlowValidationIssue {

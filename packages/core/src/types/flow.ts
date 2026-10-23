@@ -237,6 +237,30 @@ export interface NodePosition {
   y: number;
 }
 
+/** Type of a document variable. */
+export type DocumentVariableType = 'number' | 'text' | 'select' | 'date' | 'boolean' | 'user';
+
+/**
+ * A piece of document data the flow uses (in conditions and approvers). `engine.start` and
+ * `resubmit` reject documents whose variables are missing (when required) or of the wrong type.
+ */
+export interface DocumentVariable {
+  /** Path in the document, e.g. `"amount"` or `"pic.user_id"`. */
+  key: string;
+  /** Human-readable name. */
+  label?: string;
+  /**
+   * - `number`: a finite number; `text`: a string; `select`: one of `options`;
+   * - `date`: an ISO 8601 date or date-time string; `boolean`: true or false;
+   * - `user`: a user ID (non-empty string).
+   */
+  type: DocumentVariableType;
+  /** Allowed values of a `select` variable. */
+  options?: string[];
+  /** The document must contain a value. Default `false`. */
+  required?: boolean;
+}
+
 /** An approval flow, stored and versioned as JSON. */
 export interface FlowDefinition {
   /** Slug identifying the flow, e.g. `"purchase-request"`. */
@@ -249,6 +273,8 @@ export interface FlowDefinition {
   start: string;
   /** Default behaviour after resubmission. Default `"restart"`. */
   resubmitPolicy?: ResubmitPolicy;
+  /** Document data the flow expects, checked when an instance starts or is resubmitted. */
+  variables?: DocumentVariable[];
   /** Nodes keyed by their slug ID. */
   nodes: Record<string, FlowNode>;
   /** Node positions for the editor; ignored by the engine. */

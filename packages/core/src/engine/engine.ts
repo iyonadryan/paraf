@@ -2,6 +2,7 @@ import { BUILTIN_OPERATORS } from '../condition/operators';
 import type { OperatorFunction } from '../condition/evaluate';
 import {
   ConcurrencyError,
+  DocumentValidationError,
   FlowNotFoundError,
   FlowValidationError,
   FlowVersionExistsError,
@@ -21,6 +22,7 @@ import type {
 import type { FlowDefinition, PublishedFlow, ResubmitPolicy } from '../types/flow';
 import type { AuditEntry, Instance, InstanceState, Subject } from '../types/instance';
 import type { JsonObject } from '../types/json';
+import { validateDocument } from '../document';
 import { clone } from '../utils/clone';
 import { uuidv7 } from '../uuid';
 import type { IdGenerator } from '../uuid';
@@ -264,6 +266,8 @@ export class ParafEngine {
 
     const flow = await this.store.getActiveFlow(flowId);
     if (!flow) throw new FlowNotFoundError(flowId);
+    const problems = validateDocument(options.document ?? {}, flow.variables);
+    if (problems.length > 0) throw new DocumentValidationError(problems, context);
     const { version } = flow;
     this.flowCache.set(`${flowId}@${version}`, flow);
 

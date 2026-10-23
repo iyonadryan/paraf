@@ -94,6 +94,8 @@ export interface ConfigField {
 export interface ApproverTypeMeta {
   /** Human-readable name, e.g. "By role". */
   label?: string;
+  /** One-line explanation shown in the editor, e.g. "Everyone with a given role". */
+  description?: string;
   /** Form fields keyed by approver entry property. */
   configSchema?: Record<string, ConfigField>;
 }
