@@ -1,7 +1,11 @@
 # @paraf/mysql
 
-MySQL storage adapter for [Paraf](../../README.md). Requires `mysql2` (3.9+) and MySQL 8.0.19+
-with InnoDB (tested on 8.4).
+MySQL storage adapter for [Paraf](../../README.md). Requires Node.js 24+, `mysql2` (3.9+), and
+MySQL 8.0.19+ with InnoDB (tested on 8.4).
+
+```sh
+npm install @paraf/core @paraf/mysql mysql2
+```
 
 ```ts
 import { createEngine } from '@paraf/core';

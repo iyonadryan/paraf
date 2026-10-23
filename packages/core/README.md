@@ -7,6 +7,12 @@ dependencies.
 > [!WARNING]
 > Early development. The API may still change before `1.0.0`.
 
+Requires Node.js 24 or newer.
+
+```sh
+npm install @paraf/core
+```
+
 ## Run a flow
 
 ```ts

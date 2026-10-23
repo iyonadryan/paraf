@@ -9,6 +9,39 @@
 
 Paraf lets you define approval flows as JSON, run them with a headless engine, store them in PostgreSQL or MySQL, and let admins edit them visually with a drag-and-drop editor. It doesn't assume anything about your users, roles, or org chart: you plug in how approvers are found.
 
+## Requirements
+
+| What                                     | Version                                                                    |
+| ---------------------------------------- | -------------------------------------------------------------------------- |
+| Node.js                                  | **24 or newer**                                                            |
+| PostgreSQL (with `@paraf/postgres`)      | 12 or newer (tested on 16), driver `pg` 8.11+                              |
+| MySQL (with `@paraf/mysql`)              | 8.0.19 or newer, InnoDB (tested on 8.4), driver `mysql2` 3.9+              |
+| React (with `@paraf/editor`)             | 18 or newer                                                                |
+| Express, Fastify, or Hono (Paraf Studio) | Only to mount the studio in your app: Express 4.18+, Fastify 5+, Hono 4.8+ |
+
+## Installation
+
+> [!NOTE]
+> The packages are not on npm yet; these commands work from the first release (`0.1.0`).
+
+Install the engine, plus the adapter for your database:
+
+```sh
+npm install @paraf/core
+npm install @paraf/postgres pg     # PostgreSQL
+npm install @paraf/mysql mysql2    # or MySQL
+```
+
+Optional:
+
+```sh
+npm install @paraf/editor react react-dom   # the visual editor, inside your React app
+npm install --save-dev @paraf/studio        # Paraf Studio: the editor as a ready-made app
+```
+
+Using pnpm or Yarn? Replace `npm install` with `pnpm add` or `yarn add` (and `--save-dev` with
+`-D`). Only working on this repository itself needs pnpm; see [Contributing](#contributing).
+
 ## Features
 
 - **Flows as data.** Approval flows are versioned JSON documents. Editing a flow creates a new version; running approvals keep the version they started with.

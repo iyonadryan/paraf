@@ -15,6 +15,13 @@ the version your app runs.
 > [!WARNING]
 > Early development. The API may still change before `1.0.0`.
 
+## Requirements
+
+- Node.js 24 or newer.
+- An engine from `@paraf/core`, usually with `@paraf/postgres` or `@paraf/mysql`.
+- Only to mount the studio in your app: Express 4.18+, Fastify 5+, or Hono 4.8+. On its own
+  port it needs no framework.
+
 ## Quick start
 
 1. Install it (as a dev dependency if you only run it in development):

@@ -1,7 +1,11 @@
 # @paraf/postgres
 
-PostgreSQL storage adapter for [Paraf](../../README.md). Requires `pg` (8.11+) and PostgreSQL 12+
-(tested on 16).
+PostgreSQL storage adapter for [Paraf](../../README.md). Requires Node.js 24+, `pg` (8.11+), and
+PostgreSQL 12+ (tested on 16).
+
+```sh
+npm install @paraf/core @paraf/postgres pg
+```
 
 ```ts
 import { createEngine } from '@paraf/core';

@@ -11,6 +11,12 @@ one running approval.
 Embed it in your own admin pages with this package, or use
 [Paraf Studio](../studio/README.md) for a ready-made app around it.
 
+Requires React 18 or newer.
+
+```sh
+npm install @paraf/core @paraf/editor react react-dom
+```
+
 ## Edit a flow
 
 ```tsx

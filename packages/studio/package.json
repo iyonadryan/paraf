@@ -76,7 +76,7 @@
   "peerDependencies": {
     "@paraf/core": "workspace:^",
     "express": ">=4.18",
-    "fastify": ">=4.0",
+    "fastify": ">=5.0",
     "hono": ">=4.8"
   },
   "peerDependenciesMeta": {
