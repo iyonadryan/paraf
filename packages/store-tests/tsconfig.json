@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "paths": {
+      "@paraf/core": ["../core/src/index.ts"]
+    }
+  },
+  "include": ["src", "test", "*.ts"]
+}

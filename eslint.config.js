@@ -26,7 +26,7 @@ export default tseslint.config(
   },
   {
     // Tests build deliberately broken flows, which needs loosely typed objects.
-    files: ['**/test/**/*.ts'],
+    files: ['**/test/**/*.ts', 'packages/store-tests/src/**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',

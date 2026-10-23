@@ -1,0 +1,32 @@
+# Databases for the adapter tests: `docker compose up -d --wait`, then `pnpm test`.
+# Non-default host ports avoid clashing with a locally installed PostgreSQL or MySQL.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: paraf
+      POSTGRES_DB: paraf_test
+    ports:
+      - '55432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d paraf_test']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: paraf
+      MYSQL_DATABASE: paraf_test
+    ports:
+      - '53306:3306'
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -pparaf --silent']
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    tmpfs:
+      - /var/lib/mysql

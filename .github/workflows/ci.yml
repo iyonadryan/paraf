@@ -13,6 +13,38 @@ jobs:
   check:
     name: Lint, typecheck, test
     runs-on: ubuntu-latest
+
+    # Same databases and ports as docker-compose.yml.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: paraf
+          POSTGRES_DB: paraf_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d paraf_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: paraf
+          MYSQL_DATABASE: paraf_test
+        ports:
+          - 53306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pparaf --silent"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 60
+
+    env:
+      PARAF_POSTGRES_URL: postgres://postgres:paraf@localhost:55432/paraf_test
+      PARAF_MYSQL_URL: mysql://root:paraf@localhost:53306/paraf_test
+
     steps:
       - uses: actions/checkout@v7
 
@@ -37,5 +69,5 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Test
+      - name: Test (core, MemoryStore, PostgreSQL, MySQL)
         run: pnpm test:coverage

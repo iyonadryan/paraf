@@ -93,7 +93,7 @@ engine.on('instance.completed', async ({ instance }) => {
 - [x] Core engine: approvers, modes, groups, actions, versioning, audit, events
 - [x] Approval chains and duplicate approver handling
 - [x] Timeouts and escalation
-- [ ] PostgreSQL and MySQL adapters
+- [x] PostgreSQL and MySQL adapters
 - [ ] Visual editor
 - [ ] Docs and first release (`0.1.0`)
 
@@ -105,9 +105,13 @@ Development needs Node.js 24 (see `.node-version`) and pnpm (`corepack enable pn
 
 ```sh
 pnpm install
+docker compose up -d --wait   # PostgreSQL 16 and MySQL 8.4 for the adapter tests
 pnpm lint && pnpm typecheck && pnpm test
 pnpm changeset   # describe changes to published packages
 ```
+
+The adapter tests read `PARAF_POSTGRES_URL` and `PARAF_MYSQL_URL`, defaulting to the
+`docker-compose.yml` databases (ports 55432 and 53306).
 
 ## License
 
