@@ -275,10 +275,6 @@ const EDGE_COLORS: Record<EdgeKind, string> = {
   reject: '#C0362C',
 };
 
-function fallbackPosition(index: number): NodePosition {
-  return { x: 40 + (index % 3) * 320, y: 120 + Math.floor(index / 3) * 190 };
-}
-
 /** Zoom out / level / zoom in / tidy up, as in the design's bottom-left panel. */
 function ZoomPanel() {
   const { flow, commit, messages, readOnly } = useEditor();
@@ -387,6 +383,9 @@ export function Canvas() {
   const [selectedEdges, setSelectedEdges] = useState<ReadonlySet<string>>(new Set());
   const hasStart = flow.start in flow.nodes;
 
+  // Nodes without a stored position (e.g. a flow published from code) are laid out top to bottom.
+  const autoPositions = useMemo(() => autoLayout(flow), [flow]);
+
   const cards = useMemo(() => {
     const firstIssue = new Map<string, number>();
     issues.forEach((issue, index) => {
@@ -415,14 +414,14 @@ export function Canvas() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setNodes((previous) => {
       const byId = new Map(previous.map((node) => [node.id, node]));
-      const cardNodes = cards.map(({ id, data }, index): CardNode => {
+      const cardNodes = cards.map(({ id, data }): CardNode => {
         const current = byId.get(id) as CardNode | undefined;
         return {
           ...current,
           id,
           type: 'card',
           data,
-          position: flow.layout?.[id] ?? fallbackPosition(index),
+          position: flow.layout?.[id] ?? (autoPositions[id] as NodePosition),
           selected: current?.selected ?? id === selectedNodeId,
         };
       });
@@ -457,7 +456,7 @@ export function Canvas() {
       };
       return [start, emptyCard];
     });
-  }, [cards, flow.layout, flow.start, hasStart, selectedNodeId]);
+  }, [cards, autoPositions, flow.layout, flow.start, hasStart, selectedNodeId]);
 
   // A selection made outside the canvas (side panel, problems list, a new node) is shown on it.
   useEffect(() => {

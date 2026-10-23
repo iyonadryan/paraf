@@ -20,6 +20,7 @@ Paraf lets you define approval flows as JSON, run them with a headless engine, s
 - **Audit trail.** Every decision is recorded: who, what, when, and why.
 - **Database-agnostic core.** Zero runtime dependencies. Adapters for PostgreSQL and MySQL, or write your own.
 - **Visual editor.** A React component for building flows like a diagram, with live validation.
+- **Paraf Studio.** The editor as a ready-made app next to yours (own port, or Express, Fastify, Hono): publish to your database, see the version history, roll back.
 - **Safe by design.** No `eval`: conditions use a JSON Logic-style evaluator. Optimistic locking prevents race conditions when approvers act at the same time.
 
 ## Packages
@@ -30,6 +31,7 @@ Paraf lets you define approval flows as JSON, run them with a headless engine, s
 | `@paraf/postgres` | PostgreSQL storage adapter                     |
 | `@paraf/mysql`    | MySQL storage adapter                          |
 | `@paraf/editor`   | React visual flow editor                       |
+| `@paraf/studio`   | The editor as a ready-made web app             |
 
 ## Quick look
 
@@ -87,6 +89,20 @@ engine.on('instance.completed', async ({ instance }) => {
 });
 ```
 
+Edit flows visually with Paraf Studio, which publishes through the same engine (and so to the
+same database). It is off in production by default:
+
+```ts
+import { startStudio } from '@paraf/studio';
+
+if (process.env.NODE_ENV !== 'production') {
+  await startStudio({ engine, label: 'development' }); // prints http://localhost:7272/?token=…
+}
+```
+
+See [`@paraf/studio`](./packages/studio/README.md) for mounting it in Express, Fastify, or Hono,
+and for editing the flows of staging or production safely.
+
 ## Roadmap
 
 - [x] Foundation: monorepo, flow schema, validator, UUID v7
@@ -95,6 +111,7 @@ engine.on('instance.completed', async ({ instance }) => {
 - [x] Timeouts and escalation
 - [x] PostgreSQL and MySQL adapters
 - [x] Visual editor and progress view
+- [x] Paraf Studio (own port, Express, Fastify, Hono), version history and rollback
 - [ ] Docs and first release (`0.1.0`)
 
 ## Contributing
@@ -117,8 +134,20 @@ The editor demo runs a real engine on a `MemoryStore` in the browser:
 
 ```sh
 pnpm --filter editor-demo dev                                # http://localhost:5199
+```
+
+The studio demo starts Paraf Studio with an in-memory engine and a sample flow:
+
+```sh
+pnpm build                          # the studio serves its built UI
+pnpm --filter studio-demo start     # prints http://localhost:7272/?token=…
+```
+
+End-to-end tests (Playwright) for both demos:
+
+```sh
 pnpm --filter editor-demo exec playwright install chromium   # once
-pnpm test:e2e   # builds the example flow through the UI, exports and re-imports it
+pnpm build && pnpm test:e2e
 ```
 
 ## License

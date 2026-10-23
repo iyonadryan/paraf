@@ -35,7 +35,10 @@ describe('PostgresStore migrations', () => {
       ),
     );
     const applied = await pool.query(`SELECT version, name FROM ${prefix}migrations`);
-    expect(applied.rows).toEqual([{ version: 1, name: 'initial schema' }]);
+    expect(applied.rows).toEqual([
+      { version: 1, name: 'initial schema' },
+      { version: 2, name: 'flow version notes' },
+    ]);
   });
 
   it('is idempotent and safe to run concurrently', async () => {
@@ -43,7 +46,7 @@ describe('PostgresStore migrations', () => {
     await Promise.all([store.migrate(), store.migrate(), store.migrate()]);
     await store.migrate();
     const applied = await pool.query(`SELECT COUNT(*)::int AS n FROM ${prefix}migrations`);
-    expect(applied.rows[0]).toEqual({ n: 1 });
+    expect(applied.rows[0]).toEqual({ n: 2 });
   });
 
   it('rolls back a failed migration', async () => {

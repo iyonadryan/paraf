@@ -15,6 +15,18 @@ export interface FlowSummary {
 export interface FlowVersionMeta {
   /** Who published the version. */
   createdBy?: string;
+  /** Release notes: what changed and why. */
+  notes?: string;
+}
+
+/** One stored version of a flow, without its definition. */
+export interface FlowVersionInfo {
+  version: number;
+  /** The flow's name in this version. */
+  name: string;
+  createdBy: string | null;
+  notes: string | null;
+  createdAt: Date;
 }
 
 /** Offset pagination. */
@@ -72,6 +84,8 @@ export interface ParafStore {
   getFlowVersion(flowId: string, version: number): Promise<PublishedFlow | null>;
   getActiveFlow(flowId: string): Promise<PublishedFlow | null>;
   listFlows(): Promise<FlowSummary[]>;
+  /** Versions of one flow, newest first; empty when the flow does not exist. */
+  listFlowVersions(flowId: string): Promise<FlowVersionInfo[]>;
 
   createInstance(state: InstanceState, audit: AuditEntry[]): Promise<void>;
   getInstance(id: string): Promise<InstanceState | null>;

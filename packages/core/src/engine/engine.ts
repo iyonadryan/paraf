@@ -13,6 +13,7 @@ import {
 import type { ActionErrorContext } from '../errors';
 import type {
   FlowSummary,
+  FlowVersionInfo,
   InstanceQuery,
   PageQuery,
   Paginated,
@@ -95,6 +96,8 @@ export interface TimeoutResult {
 export interface PublishOptions {
   /** Who published the version. */
   createdBy?: string;
+  /** Release notes: what changed and why. */
+  notes?: string;
 }
 
 function defaultEventError(error: unknown, event: { name: ParafEventName }): void {
@@ -183,6 +186,11 @@ export class ParafEngine {
     this.operators.set(name, operator);
   }
 
+  /** Names of the registered custom operators (for `validateFlow` and the editor). */
+  getOperators(): string[] {
+    return [...this.operators.keys()];
+  }
+
   /** Subscribes to an engine event; returns a function that unsubscribes. */
   on<E extends ParafEventName>(name: E, handler: ParafEventHandler<E>): () => void {
     return this.events.on(name, handler);
@@ -214,10 +222,10 @@ export class ParafEngine {
         version: (summary?.latestVersion ?? 0) + 1,
       };
       try {
-        await this.store.saveFlowVersion(
-          definition,
-          options.createdBy === undefined ? {} : { createdBy: options.createdBy },
-        );
+        await this.store.saveFlowVersion(definition, {
+          ...(options.createdBy === undefined ? {} : { createdBy: options.createdBy }),
+          ...(options.notes === undefined ? {} : { notes: options.notes }),
+        });
       } catch (error) {
         if (error instanceof FlowVersionExistsError && attempt < this.maxAttempts) continue;
         throw error;
@@ -246,6 +254,11 @@ export class ParafEngine {
   /** All stored flows with their active and latest versions. */
   listFlows(): Promise<FlowSummary[]> {
     return this.store.listFlows();
+  }
+
+  /** The versions of a flow (newest first) with who published them, when, and their notes. */
+  listFlowVersions(flowId: string): Promise<FlowVersionInfo[]> {
+    return this.store.listFlowVersions(flowId);
   }
 
   // ---------------------------------------------------------------------------------------

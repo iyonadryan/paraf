@@ -96,6 +96,7 @@ export type {
 export { MemoryStore } from './store/memory-store';
 export type {
   FlowSummary,
+  FlowVersionInfo,
   FlowVersionMeta,
   InstanceQuery,
   PageQuery,

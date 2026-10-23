@@ -96,3 +96,7 @@ CREATE TABLE IF NOT EXISTS paraf_audit (
   FOREIGN KEY (instance_id) REFERENCES paraf_instances (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_bin;
 INSERT IGNORE INTO paraf_migrations (version, name) VALUES (1, 'initial schema');
+
+-- 2: flow version notes
+ALTER TABLE paraf_flows ADD COLUMN notes TEXT;
+INSERT IGNORE INTO paraf_migrations (version, name) VALUES (2, 'flow version notes');

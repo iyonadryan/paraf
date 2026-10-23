@@ -214,6 +214,9 @@ export interface Messages {
 
   // Publish dialog
   publishTitle: (version: number) => string;
+  /** `target` is {@link EditorPublishOptions.target}, e.g. "PRODUCTION". */
+  publishTarget: (target: string) => string;
+  /** `version` is the version being published. */
   runningInstances: (count: number, version: number) => string;
   changesSince: (version: number) => string;
   firstVersion: string;
@@ -516,8 +519,10 @@ export const defaultMessages: Messages = {
   show: 'Show',
 
   publishTitle: (version) => `Publish version ${version}`,
+  publishTarget: (target) =>
+    `Publishing to ${target}. New submissions there use this version right away.`,
   runningInstances: (count, version) =>
-    `${count} document${count === 1 ? '' : 's'} in progress keep using v${version} until they finish. Only new submissions use the new version.`,
+    `${count} document${count === 1 ? '' : 's'} in progress keep${count === 1 ? 's' : ''} the version ${count === 1 ? 'it' : 'they'} started with. Only new submissions use v${version}.`,
   changesSince: (version) => `Changes since v${version}`,
   firstVersion: 'This is the first version of the flow.',
   noChanges: 'No changes.',

@@ -94,3 +94,7 @@ CREATE TABLE paraf_audit (
 );
 CREATE INDEX idx_paraf_audit_instance ON paraf_audit (instance_id, seq);
 INSERT INTO paraf_migrations (version, name) VALUES (1, 'initial schema');
+
+-- 2: flow version notes
+ALTER TABLE paraf_flows ADD COLUMN notes TEXT;
+INSERT INTO paraf_migrations (version, name) VALUES (2, 'flow version notes');

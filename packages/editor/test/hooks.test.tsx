@@ -56,6 +56,8 @@ describe('default messages', () => {
   it('uses the singular for one', () => {
     expect(m.fixBeforePublishing(1)).toBe('Fix 1 problem before publishing');
     expect(m.counts(1, 1)).toBe('1 node · 1 connection');
-    expect(m.runningInstances(1, 2)).toMatch(/^1 document in progress keep using v2/);
+    expect(m.runningInstances(1, 3)).toBe(
+      '1 document in progress keeps the version it started with. Only new submissions use v3.',
+    );
   });
 });

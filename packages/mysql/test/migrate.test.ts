@@ -42,7 +42,10 @@ describe('MySqlStore migrations', () => {
     );
     expect(engines).toEqual([{ ENGINE: 'InnoDB' }]);
     const [applied] = await pool.query(`SELECT version, name FROM ${prefix}migrations`);
-    expect(applied).toEqual([{ version: 1, name: 'initial schema' }]);
+    expect(applied).toEqual([
+      { version: 1, name: 'initial schema' },
+      { version: 2, name: 'flow version notes' },
+    ]);
   });
 
   it('is idempotent and safe to run concurrently', async () => {
@@ -50,7 +53,7 @@ describe('MySqlStore migrations', () => {
     await Promise.all([store.migrate(), store.migrate(), store.migrate()]);
     await store.migrate();
     const [rows] = await pool.query(`SELECT COUNT(*) AS n FROM ${prefix}migrations`);
-    expect(rows).toEqual([{ n: 1 }]);
+    expect(rows).toEqual([{ n: 2 }]);
   });
 
   it('can be retried after failing halfway', async () => {

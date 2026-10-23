@@ -8,6 +8,9 @@ one running approval.
 > [!WARNING]
 > Early development. The API may still change before `1.0.0`.
 
+Embed it in your own admin pages with this package, or use
+[Paraf Studio](../studio/README.md) for a ready-made app around it.
+
 ## Edit a flow
 
 ```tsx
@@ -16,7 +19,7 @@ import type { FlowDefinition } from '@paraf/core';
 import { ParafEditor } from '@paraf/editor';
 import '@paraf/editor/style.css';
 
-export function FlowPage({ initial, approverTypes, chains }: Props) {
+export function FlowPage({ initial, approverTypes, chains, operators, active, latest }: Props) {
   const [flow, setFlow] = useState<FlowDefinition>(initial);
   return (
     <div style={{ height: '100vh' }}>
@@ -25,9 +28,12 @@ export function FlowPage({ initial, approverTypes, chains }: Props) {
         onChange={setFlow}
         approverTypes={approverTypes} // engine.getApproverTypes(), sent from your server
         chains={chains} //               engine.getChains()
+        operators={operators} //       engine.getOperators()
         publish={{
           activeVersion: active?.version ?? null,
-          activeFlow: active,
+          latestVersion: latest, //    after a rollback the next version follows the latest one
+          activeFlow: active, //       to list the changes since the active version
+          target: 'PRODUCTION', //     optional: shown in the publish dialog
           onPublish: (draft, notes) => api.publishFlow(draft, notes), // engine.publishFlow on the server
         }}
       />

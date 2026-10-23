@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node", "vitest/globals", "vite/client"],
+    "paths": {
+      "@paraf/core": ["../core/src/index.ts"],
+      "@paraf/editor": ["../editor/src/index.ts"]
+    }
+  },
+  "include": ["src", "ui", "test", "*.ts"]
+}

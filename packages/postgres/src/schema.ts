@@ -120,6 +120,11 @@ export function migrations(p: string): Migration[] {
         `CREATE INDEX idx_${p}audit_instance ON ${p}audit (instance_id, seq)`,
       ],
     },
+    {
+      version: 2,
+      name: 'flow version notes',
+      statements: [`ALTER TABLE ${p}flows ADD COLUMN notes TEXT`],
+    },
   ];
 }
 

@@ -5,6 +5,8 @@ import type { AuditEntry, Instance, InstanceState } from '../types/instance';
 import { clone } from '../utils/clone';
 import type {
   FlowSummary,
+  FlowVersionInfo,
+  FlowVersionMeta,
   InstanceQuery,
   PageQuery,
   Paginated,
@@ -13,6 +15,13 @@ import type {
 } from './types';
 
 const DEFAULT_LIMIT = 50;
+
+interface StoredVersion {
+  flow: PublishedFlow;
+  createdBy: string | null;
+  notes: string | null;
+  createdAt: Date;
+}
 
 function paginate<T>(items: T[], page: PageQuery = {}): Paginated<T> {
   const offset = page.offset ?? 0;
@@ -30,16 +39,21 @@ function isActive(instance: Instance): boolean {
  * the store.
  */
 export class MemoryStore implements ParafStore {
-  private readonly flows = new Map<string, Map<number, PublishedFlow>>();
+  private readonly flows = new Map<string, Map<number, StoredVersion>>();
   private readonly heads = new Map<string, number>();
   private readonly instances = new Map<string, InstanceState>();
   private readonly audit: AuditEntry[] = [];
 
-  saveFlowVersion(flow: PublishedFlow): Promise<void> {
+  saveFlowVersion(flow: PublishedFlow, meta: FlowVersionMeta = {}): Promise<void> {
     const { version } = flow;
-    const versions = this.flows.get(flow.id) ?? new Map<number, PublishedFlow>();
+    const versions = this.flows.get(flow.id) ?? new Map<number, StoredVersion>();
     if (versions.has(version)) return Promise.reject(new FlowVersionExistsError(flow.id, version));
-    versions.set(version, clone(flow));
+    versions.set(version, {
+      flow: clone(flow),
+      createdBy: meta.createdBy ?? null,
+      notes: meta.notes ?? null,
+      createdAt: new Date(),
+    });
     this.flows.set(flow.id, versions);
     return Promise.resolve();
   }
@@ -53,8 +67,8 @@ export class MemoryStore implements ParafStore {
   }
 
   getFlowVersion(flowId: string, version: number): Promise<PublishedFlow | null> {
-    const flow = this.flows.get(flowId)?.get(version);
-    return Promise.resolve(flow ? clone(flow) : null);
+    const stored = this.flows.get(flowId)?.get(version);
+    return Promise.resolve(stored ? clone(stored.flow) : null);
   }
 
   getActiveFlow(flowId: string): Promise<PublishedFlow | null> {
@@ -65,7 +79,9 @@ export class MemoryStore implements ParafStore {
   listFlows(): Promise<FlowSummary[]> {
     const summaries: FlowSummary[] = [];
     for (const [id, versions] of this.flows) {
-      const latest = [...versions.values()].reduce((a, b) => (b.version > a.version ? b : a));
+      const latest = [...versions.values()]
+        .map((stored) => stored.flow)
+        .reduce((a, b) => (b.version > a.version ? b : a));
       summaries.push({
         id,
         name: latest.name,
@@ -74,6 +90,19 @@ export class MemoryStore implements ParafStore {
       });
     }
     return Promise.resolve(summaries.sort((a, b) => a.id.localeCompare(b.id)));
+  }
+
+  listFlowVersions(flowId: string): Promise<FlowVersionInfo[]> {
+    const versions = [...(this.flows.get(flowId)?.values() ?? [])].map(
+      ({ flow, createdBy, notes, createdAt }): FlowVersionInfo => ({
+        version: flow.version,
+        name: flow.name,
+        createdBy,
+        notes,
+        createdAt: new Date(createdAt),
+      }),
+    );
+    return Promise.resolve(versions.sort((a, b) => b.version - a.version));
   }
 
   createInstance(state: InstanceState, audit: AuditEntry[]): Promise<void> {

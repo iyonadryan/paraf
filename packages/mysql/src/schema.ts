@@ -127,6 +127,11 @@ export function migrations(p: string): Migration[] {
 ) ${TABLE_OPTIONS}`,
       ],
     },
+    {
+      version: 2,
+      name: 'flow version notes',
+      statements: [`ALTER TABLE ${p}flows ADD COLUMN notes TEXT`],
+    },
   ];
 }
 

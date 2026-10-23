@@ -1191,6 +1191,19 @@
   color: var(--paraf-accent);
 }
 
+.paraf-callout--warning {
+  justify-content: flex-start;
+  color: var(--paraf-warning-text);
+  background: var(--paraf-warning-bg);
+  border: 1px solid var(--paraf-warning-border);
+}
+
+.paraf-callout--warning svg {
+  flex: 0 0 18px;
+  margin-top: 2px;
+  color: var(--paraf-warning);
+}
+
 .paraf-callout--success {
   align-items: center;
   font-size: 13px;

@@ -8,6 +8,7 @@ import type {
   ApproverSlot,
   AuditEntry,
   FlowSummary,
+  FlowVersionInfo,
   FlowVersionMeta,
   Instance,
   InstanceQuery,
@@ -401,9 +402,16 @@ export class MySqlStore implements ParafStore {
   async saveFlowVersion(flow: PublishedFlow, meta: FlowVersionMeta = {}): Promise<void> {
     try {
       await this.pool.query(
-        `INSERT INTO ${this.table('flows')} (flow_id, version, name, definition, created_by)
-         VALUES (?, ?, ?, ?, ?)`,
-        [flow.id, flow.version, flow.name, JSON.stringify(flow), meta.createdBy ?? null],
+        `INSERT INTO ${this.table('flows')} (flow_id, version, name, definition, created_by, notes)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          flow.id,
+          flow.version,
+          flow.name,
+          JSON.stringify(flow),
+          meta.createdBy ?? null,
+          meta.notes ?? null,
+        ],
       );
     } catch (error) {
       if (errorNumber(error) === 1062) throw new FlowVersionExistsError(flow.id, flow.version);
@@ -464,6 +472,28 @@ export class MySqlStore implements ParafStore {
       name: row.name,
       activeVersion: row.active_version,
       latestVersion: row.version,
+    }));
+  }
+
+  async listFlowVersions(flowId: string): Promise<FlowVersionInfo[]> {
+    const rows = await this.select<{
+      version: number;
+      name: string;
+      created_by: string | null;
+      notes: string | null;
+      created_at: string;
+    }>(
+      this.pool,
+      `SELECT version, name, created_by, notes, created_at FROM ${this.table('flows')}
+       WHERE flow_id = ? ORDER BY version DESC`,
+      [flowId],
+    );
+    return rows.map((row) => ({
+      version: row.version,
+      name: row.name,
+      createdBy: row.created_by,
+      notes: row.notes,
+      createdAt: fromDatetime(row.created_at),
     }));
   }
 

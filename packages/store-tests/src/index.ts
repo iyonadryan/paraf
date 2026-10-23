@@ -88,6 +88,35 @@ export function describeStoreContract(name: string, harness: StoreHarness): void
           { id: FLOW_ID, name: 'v3', activeVersion: 1, latestVersion: 3 },
         ]);
       });
+
+      it('lists the versions of a flow with their metadata, newest first', async () => {
+        const before = Date.now();
+        await store.saveFlowVersion(flowVersion(2, { name: 'v2' }), {
+          createdBy: 'dev-1',
+          notes: 'Finance approves above 10M',
+        });
+        await store.saveFlowVersion({ ...flowVersion(1), id: 'another-flow' });
+        const versions = await store.listFlowVersions(FLOW_ID);
+        expect(versions).toEqual([
+          {
+            version: 2,
+            name: 'v2',
+            createdBy: 'dev-1',
+            notes: 'Finance approves above 10M',
+            createdAt: expect.any(Date),
+          },
+          {
+            version: 1,
+            name: flowVersion(1).name,
+            createdBy: null,
+            notes: null,
+            createdAt: expect.any(Date),
+          },
+        ]);
+        // Database clocks may differ slightly from the test's clock.
+        expect(versions[0]!.createdAt.getTime()).toBeGreaterThan(before - 60_000);
+        expect(await store.listFlowVersions('missing-flow')).toEqual([]);
+      });
     });
 
     describe('instances', () => {

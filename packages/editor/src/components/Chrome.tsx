@@ -16,12 +16,32 @@ const NODE_TYPES: FlowNodeType[] = ['approval', 'approval-chain', 'condition', '
 export interface EditorPublishOptions {
   /** Version new instances use now, or `null` if the flow was never published. */
   activeVersion?: number | null;
+  /**
+   * Highest stored version, when it differs from the active one (after a rollback); the next
+   * version is numbered after it. Default: `activeVersion`.
+   */
+  latestVersion?: number | null;
   /** The active version's definition, to list the changes since. */
   activeFlow?: FlowDefinition | null;
   /** Documents still running on the active version (shown in the publish dialog). */
   runningInstances?: number;
+  /**
+   * Where the version goes, e.g. "PRODUCTION" or "staging database"; shown in the publish
+   * dialog so nobody publishes to the wrong database by accident.
+   */
+  target?: string;
   /** Called with the flow and release notes when the user confirms. */
   onPublish: (flow: FlowDefinition, notes: string) => void | Promise<void>;
+}
+
+/** The number the next published version gets. */
+function nextVersion(publish: EditorPublishOptions): number {
+  return (publish.latestVersion ?? publish.activeVersion ?? 0) + 1;
+}
+
+/** Whether no version of the flow exists yet. */
+function neverPublished(publish: EditorPublishOptions): boolean {
+  return nextVersion(publish) === 1;
 }
 
 /** Node types to drag onto the canvas (or click to add below the lowest node). */
@@ -158,14 +178,16 @@ export function Header(props: {
       {props.start}
       <span className="paraf-header__title">{flow.name || flow.id}</span>
       {publish &&
-        (active === null ? (
+        (neverPublished(publish) ? (
           <span className="paraf-badge paraf-badge--neutral">{messages.draftNeverPublished}</span>
         ) : (
           <>
             <span className="paraf-badge paraf-badge--draft">
-              {messages.draftVersion(active + 1)}
+              {messages.draftVersion(nextVersion(publish))}
             </span>
-            <span className="paraf-hint">{messages.activeVersion(active)}</span>
+            {active !== null && (
+              <span className="paraf-hint">{messages.activeVersion(active)}</span>
+            )}
           </>
         ))}
       <span className="paraf-header__spacer" />
@@ -232,7 +254,9 @@ export function Header(props: {
           disabled={issues.length > 0}
           onClick={props.onPublishClick}
         >
-          {active === null ? messages.publish : messages.publishVersion(active + 1)}
+          {neverPublished(publish)
+            ? messages.publish
+            : messages.publishVersion(nextVersion(publish))}
         </button>
       )}
     </header>
@@ -326,7 +350,7 @@ export function PublishDialog(props: { publish: EditorPublishOptions; onClose: (
   const [error, setError] = useState<string | null>(null);
   const dialog = useRef<HTMLElement>(null);
   const active = publish.activeVersion ?? null;
-  const version = (active ?? 0) + 1;
+  const version = nextVersion(publish);
   const changes = publish.activeFlow ? diffFlows(publish.activeFlow, flow, messages) : null;
   const connections = edgeViews(flow, messages).length;
 
@@ -357,15 +381,23 @@ export function PublishDialog(props: { publish: EditorPublishOptions; onClose: (
           </span>
         </div>
         <div className="paraf-dialog__body">
+          {publish.target && (
+            <div className="paraf-callout paraf-callout--warning">
+              <AlertIcon size={18} />
+              <span>{messages.publishTarget(publish.target)}</span>
+            </div>
+          )}
           {active !== null && publish.runningInstances !== undefined && (
             <div className="paraf-callout paraf-callout--info">
               <InfoIcon size={18} />
-              <span>{messages.runningInstances(publish.runningInstances, active)}</span>
+              <span>{messages.runningInstances(publish.runningInstances, version)}</span>
             </div>
           )}
           <div className="paraf-stack">
             <span className="paraf-strong">
-              {active === null ? messages.firstVersion : messages.changesSince(active)}
+              {neverPublished(publish)
+                ? messages.firstVersion
+                : active !== null && messages.changesSince(active)}
             </span>
             {changes && (
               <ul className="paraf-changes">

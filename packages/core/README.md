@@ -50,6 +50,17 @@ Other actions: `reject`, `returnForRevision`, `resubmit`, `delegate`, `cancel`, 
 `reresolveApprovers`. Queries: `getInstance`, `findInstances({ subject })`,
 `findPendingForUser` (inbox), and `getHistory` (audit trail).
 
+Every `publishFlow` stores a new, immutable version and makes it active; instances keep the
+version they started with. Record who published it and why, list the history, and roll back:
+
+```ts
+await engine.publishFlow(flow, { createdBy: 'dev-1', notes: 'Finance approves above 10M' });
+await engine.listFlowVersions('purchase-request'); // newest first: version, name, createdBy, notes, createdAt
+await engine.activateFlowVersion('purchase-request', 2);
+```
+
+[Paraf Studio](../studio/README.md) does all of this in the browser.
+
 ## Document variables
 
 A flow can declare the document fields it expects. The editor offers them in conditions and

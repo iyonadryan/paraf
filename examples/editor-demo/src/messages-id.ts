@@ -249,8 +249,10 @@ export const indonesianMessages: Partial<Messages> = {
   problemsHint: 'Dicek di setiap perubahan, memakai validateFlow() yang sama dengan engine.',
   show: 'Tampilkan',
   publishTitle: (version: number) => `Terbitkan versi ${version}`,
+  publishTarget: (target: string) =>
+    `Diterbitkan ke ${target}. Pengajuan baru di sana langsung memakai versi ini.`,
   runningInstances: (count: number, version: number) =>
-    `${count} dokumen yang sedang berjalan tetap memakai v${version} sampai selesai. Hanya pengajuan baru yang memakai versi baru.`,
+    `${count} dokumen yang sedang berjalan tetap memakai versi awalnya. Hanya pengajuan baru yang memakai v${version}.`,
   changesSince: (version: number) => `Perubahan sejak v${version}`,
   firstVersion: 'Ini versi pertama flow ini.',
   noChanges: 'Tidak ada perubahan.',

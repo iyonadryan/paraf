@@ -1,0 +1,309 @@
+/* Paraf Studio. The root also has .paraf-editor, so the editor's tokens and controls apply. */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.studio {
+  height: 100vh;
+  min-height: 0;
+}
+
+.studio a {
+  color: var(--paraf-accent);
+}
+
+.studio a.paraf-button {
+  text-decoration: none;
+}
+
+.studio a.paraf-button--primary {
+  color: #ffffff;
+}
+
+/* Top bar */
+
+.studio-bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 16px;
+  color: #ffffff;
+  background: #1a1d23;
+}
+
+.studio-bar__spacer {
+  flex: 1;
+}
+
+.studio .studio-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.studio-logo span {
+  color: #aeb6c2;
+}
+
+.studio-label {
+  padding: 2px 10px;
+  font-family: var(--paraf-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: #1a1d23;
+  background: #e8eefd;
+  border-radius: 999px;
+}
+
+.studio-label--production {
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  background: var(--paraf-danger);
+}
+
+.studio-user {
+  font-size: 13px;
+  color: #cdd3dc;
+}
+
+.studio-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+
+.studio-loading {
+  padding: 32px;
+  color: var(--paraf-muted);
+}
+
+/* Pages */
+
+.studio-page {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+.studio-page__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.studio-page__head h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.studio-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 32px;
+  color: var(--paraf-text-2);
+  text-align: center;
+  background: var(--paraf-surface);
+  border: 1px dashed var(--paraf-dashed);
+  border-radius: var(--paraf-radius-card);
+}
+
+.studio-table {
+  width: 100%;
+  overflow: hidden;
+  border-collapse: collapse;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border);
+  border-radius: var(--paraf-radius-card);
+}
+
+.studio-table th,
+.studio-table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--paraf-divider);
+}
+
+.studio-table th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--paraf-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--paraf-surface-2);
+}
+
+.studio-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.studio-message {
+  max-width: 440px;
+  margin: 64px auto;
+  padding: 24px;
+  background: var(--paraf-surface);
+  border: 1px solid var(--paraf-border);
+  border-radius: var(--paraf-radius-card);
+}
+
+.studio-message h1 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.studio-message p {
+  margin: 0 0 16px;
+  color: var(--paraf-text-2);
+}
+
+/* Flow page */
+
+.studio-flow {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.studio-flow__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.studio-flow__nav a {
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.studio-toast {
+  position: absolute;
+  z-index: 40;
+  bottom: 48px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 32px);
+  padding: 10px 14px;
+  color: #ffffff;
+  background: #1a1d23;
+  border-radius: var(--paraf-radius);
+  box-shadow: var(--paraf-shadow-menu);
+  transform: translateX(-50%);
+}
+
+.studio-toast button {
+  font-size: 18px;
+  color: #cdd3dc;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.studio-drawer {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(400px, 100%);
+  padding: 16px;
+  overflow: auto;
+  background: var(--paraf-surface);
+  border-left: 1px solid var(--paraf-border);
+  box-shadow: var(--paraf-shadow-menu);
+}
+
+.studio-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.studio-drawer__head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.studio-drawer p {
+  margin: 0;
+}
+
+.studio-versions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.studio-versions li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--paraf-border-card);
+  border-radius: var(--paraf-radius-card);
+}
+
+.studio-versions .studio-version--active {
+  background: var(--paraf-success-bg);
+  border-color: var(--paraf-success-border);
+}
+
+.studio-version__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.studio-version__name {
+  overflow: hidden;
+  color: var(--paraf-text-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-badge-active {
+  padding: 1px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--paraf-success);
+  background: #ffffff;
+  border: 1px solid var(--paraf-success-border);
+  border-radius: 999px;
+}
+
+.studio-version__notes {
+  white-space: pre-wrap;
+}
+
+.studio-version__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.studio-confirm .paraf-dialog__body p {
+  margin: 0;
+}

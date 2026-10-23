@@ -162,6 +162,7 @@ describe('condition branching', () => {
     t.engine.registerOperator('startsWith', ([text, prefix]) =>
       String(text).startsWith(String(prefix)),
     );
+    expect(t.engine.getOperators()).toEqual(['startsWith']);
     const flow = {
       id: 'ops',
       name: 'Ops',

@@ -3,6 +3,7 @@ import type {
   ApproverSlot,
   AuditEntry,
   FlowSummary,
+  FlowVersionInfo,
   FlowVersionMeta,
   Instance,
   InstanceQuery,
@@ -333,9 +334,16 @@ export class PostgresStore implements ParafStore {
   async saveFlowVersion(flow: PublishedFlow, meta: FlowVersionMeta = {}): Promise<void> {
     try {
       await this.pool.query(
-        `INSERT INTO ${this.table('flows')} (flow_id, version, name, definition, created_by)
-         VALUES ($1, $2, $3, $4::jsonb, $5)`,
-        [flow.id, flow.version, flow.name, JSON.stringify(flow), meta.createdBy ?? null],
+        `INSERT INTO ${this.table('flows')} (flow_id, version, name, definition, created_by, notes)
+         VALUES ($1, $2, $3, $4::jsonb, $5, $6)`,
+        [
+          flow.id,
+          flow.version,
+          flow.name,
+          JSON.stringify(flow),
+          meta.createdBy ?? null,
+          meta.notes ?? null,
+        ],
       );
     } catch (error) {
       if (errorField(error, 'code') === '23505')
@@ -394,6 +402,27 @@ export class PostgresStore implements ParafStore {
       name: row.name,
       activeVersion: row.active_version,
       latestVersion: row.version,
+    }));
+  }
+
+  async listFlowVersions(flowId: string): Promise<FlowVersionInfo[]> {
+    const result = await this.pool.query<{
+      version: number;
+      name: string;
+      created_by: string | null;
+      notes: string | null;
+      created_at: Date;
+    }>(
+      `SELECT version, name, created_by, notes, created_at FROM ${this.table('flows')}
+       WHERE flow_id = $1 ORDER BY version DESC`,
+      [flowId],
+    );
+    return result.rows.map((row) => ({
+      version: row.version,
+      name: row.name,
+      createdBy: row.created_by,
+      notes: row.notes,
+      createdAt: row.created_at,
     }));
   }
 

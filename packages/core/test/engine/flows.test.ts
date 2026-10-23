@@ -99,6 +99,26 @@ describe('flow versioning', () => {
     await expect(t.engine.publishFlow(twoLevelFlow)).rejects.toThrow(FlowVersionExistsError);
   });
 
+  it('lists versions with who published them, when, and their notes', async () => {
+    const t = setup();
+    await t.engine.publishFlow(twoLevelFlow);
+    await t.engine.publishFlow(
+      { ...twoLevelFlow, name: 'Renamed' },
+      { createdBy: 'dev-1', notes: 'Rename the flow' },
+    );
+    expect(await t.engine.listFlowVersions('two-level')).toEqual([
+      {
+        version: 2,
+        name: 'Renamed',
+        createdBy: 'dev-1',
+        notes: 'Rename the flow',
+        createdAt: expect.any(Date),
+      },
+      { version: 1, name: 'Two levels', createdBy: null, notes: null, createdAt: expect.any(Date) },
+    ]);
+    expect(await t.engine.listFlowVersions('missing')).toEqual([]);
+  });
+
   it('loads flow versions from the store after a restart', async () => {
     const t = setup();
     const instance = await t.run(twoLevelFlow);

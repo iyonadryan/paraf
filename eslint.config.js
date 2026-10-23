@@ -12,6 +12,7 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/test-results/**',
       '**/playwright-report/**',
+      '**/test/ui-fixture/**',
     ],
   },
   js.configs.recommended,

@@ -662,12 +662,23 @@ describe('publishing', () => {
       .mockRejectedValueOnce(new Error('boom'))
       .mockRejectedValueOnce('down');
     const { user } = await renderEditor(specFlow(), {
-      publish: { activeVersion: 2, activeFlow: active, runningInstances: 3, onPublish },
+      publish: {
+        activeVersion: 2,
+        activeFlow: active,
+        runningInstances: 3,
+        target: 'PRODUCTION',
+        onPublish,
+      },
     });
     expect(screen.getByText('v3 · draft')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Publish v3' }));
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText(/3 documents in progress keep using v2/)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        /3 documents in progress keep the version they started with. Only new submissions use v3./,
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByText(/^Publishing to PRODUCTION./)).toBeInTheDocument();
     expect(within(dialog).getByText('Flow: name')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Publish v3' }));
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('Publishing failed: boom');
@@ -678,6 +689,28 @@ describe('publishing', () => {
     await user.click(screen.getByRole('button', { name: 'Publish v3' }));
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('numbers the next version after the latest one, also after a rollback', async () => {
+    const { user } = await renderEditor(specFlow(), {
+      publish: { activeVersion: 2, latestVersion: 5, activeFlow: specFlow(), onPublish: vi.fn() },
+    });
+    expect(screen.getByText('v6 · draft')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Publish v6' }));
+    expect(screen.getByRole('dialog', { name: 'Publish version 6' })).toBeInTheDocument();
+    expect(screen.getByText('Changes since v2')).toBeInTheDocument();
+  });
+
+  it('handles a flow with versions but none active', async () => {
+    const { user } = await renderEditor(specFlow(), {
+      publish: { activeVersion: null, latestVersion: 3, onPublish: vi.fn() },
+    });
+    expect(screen.getByText('v4 · draft')).toBeInTheDocument();
+    expect(screen.queryByText(/^active:/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Publish v4' }));
+    const dialog = screen.getByRole('dialog', { name: 'Publish version 4' });
+    expect(within(dialog).queryByText('This is the first version of the flow.')).toBeNull();
+    expect(within(dialog).queryByText(/^Changes since/)).toBeNull();
   });
 
   it('shows no changes, and blocks publishing while there are problems', async () => {
