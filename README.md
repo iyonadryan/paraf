@@ -2,7 +2,7 @@
 
 **Dynamic approval workflows for JavaScript and TypeScript, with a visual flow editor.**
 
-> *Paraf* (Indonesian): the initials you sign on a document to approve it.
+> _Paraf_ (Indonesian): the initials you sign on a document to approve it.
 
 > [!WARNING]
 > Paraf is in early development. The API is not stable yet and packages are not published to npm. Follow the [roadmap](#roadmap) for progress.
@@ -24,12 +24,12 @@ Paraf lets you define approval flows as JSON, run them with a headless engine, s
 
 ## Packages
 
-| Package | Description |
-|---|---|
-| `@paraf/core` | Engine, types, flow validator, in-memory store |
-| `@paraf/postgres` | PostgreSQL storage adapter |
-| `@paraf/mysql` | MySQL storage adapter |
-| `@paraf/editor` | React visual flow editor |
+| Package           | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| `@paraf/core`     | Engine, types, flow validator, in-memory store |
+| `@paraf/postgres` | PostgreSQL storage adapter                     |
+| `@paraf/mysql`    | MySQL storage adapter                          |
+| `@paraf/editor`   | React visual flow editor                       |
 
 ## Quick look
 
@@ -89,7 +89,7 @@ engine.on('instance.completed', async ({ instance }) => {
 
 ## Roadmap
 
-- [ ] Foundation: monorepo, flow schema, validator, UUID v7
+- [x] Foundation: monorepo, flow schema, validator, UUID v7
 - [ ] Core engine: approvers, modes, groups, actions, versioning, audit, events
 - [ ] Approval chains and duplicate approver handling
 - [ ] Timeouts and escalation
@@ -100,6 +100,14 @@ engine.on('instance.completed', async ({ instance }) => {
 ## Contributing
 
 Issues and ideas are welcome. Contribution guidelines will be added once the core API stabilizes.
+
+Development needs Node.js 24 (see `.node-version`) and pnpm (`corepack enable pnpm`):
+
+```sh
+pnpm install
+pnpm lint && pnpm typecheck && pnpm test
+pnpm changeset   # describe changes to published packages
+```
 
 ## License
 
