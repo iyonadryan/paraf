@@ -188,6 +188,27 @@ export class UnknownApproverTypeError extends StepEntryError {
   }
 }
 
+/** A flow uses a chain that is not registered with the engine. */
+export class UnknownChainError extends StepEntryError {
+  readonly chain: string;
+
+  constructor(chain: string, context: StepEntryErrorContext) {
+    super('UNKNOWN_CHAIN', `Chain "${chain}" is not registered`, context);
+    this.chain = chain;
+  }
+}
+
+/** An approval chain returned a user it already passed (e.g. A → B → A). */
+export class ChainCycleError extends StepEntryError {
+  /** Users in chain order, ending with the repeated one. */
+  readonly path: readonly string[];
+
+  constructor(path: readonly string[], context: StepEntryErrorContext) {
+    super('CHAIN_CYCLE', `Approval chain loops: ${path.join(' → ')}`, context);
+    this.path = path;
+  }
+}
+
 /** A delegation is not allowed (e.g. to oneself, or it would make a minimum unreachable). */
 export class DelegationError extends ActionError {
   constructor(message: string, context: ActionErrorContext) {
@@ -199,12 +220,5 @@ export class DelegationError extends ActionError {
 export class ConditionEvaluationError extends ParafError {
   constructor(message: string) {
     super('CONDITION_EVALUATION_FAILED', message);
-  }
-}
-
-/** A feature used by the flow is not available yet. */
-export class NotImplementedError extends ParafError {
-  constructor(message: string) {
-    super('NOT_IMPLEMENTED', message);
   }
 }

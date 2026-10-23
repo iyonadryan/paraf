@@ -8,7 +8,6 @@ import {
   InvalidArgumentError,
   InvalidStateError,
   NotAuthorizedError,
-  NotImplementedError,
   UnknownApproverTypeError,
 } from '../../src';
 import type { FlowDefinition } from '../../src';
@@ -367,26 +366,6 @@ describe('action validation', () => {
     const error = await t.engine.approve(instance.id, 's1').catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(InvalidStateError);
     expect((error as Error).message).toContain('already rejected');
-  });
-
-  it('reports approval-chain nodes as not implemented yet', async () => {
-    const t = setup();
-    const flow = {
-      id: 'chain',
-      name: 'Chain',
-      start: 'c',
-      nodes: {
-        c: {
-          type: 'approval-chain',
-          chain: 'supervisor',
-          maxLevels: 3,
-          next: 'approved',
-          onReject: 'rejected',
-        },
-        ...END_NODES,
-      },
-    } satisfies FlowDefinition;
-    await expect(t.run(flow)).rejects.toThrow(NotImplementedError);
   });
 });
 

@@ -80,6 +80,18 @@ export interface StepConfig {
   groups: StepGroupConfig[];
   /** Set when the step was returned to the requester: how to continue after resubmission. */
   resubmitPolicy?: ResubmitPolicy;
+  /** Set on approval-chain levels: who the level was resolved for. */
+  chain?: StepChainConfig;
+}
+
+/** The user an approval-chain level belongs to. */
+export interface StepChainConfig {
+  /** User the level was resolved from (the origin, or the previous level's user). */
+  fromUserId: string;
+  /** User the chain returned for this level. */
+  userId: string;
+  /** Whether `userId` matched the node's `until` (the chain ends after this level). */
+  stopper: boolean;
 }
 
 /** One visit of an approval node. */
@@ -148,6 +160,7 @@ export type AuditAction =
   | 'reresolved'
   | 'skipped'
   | 'condition_evaluated'
+  | 'chain_completed'
   | 'cancelled'
   | 'completed';
 

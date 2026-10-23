@@ -114,6 +114,10 @@ export function setup(options: Partial<EngineOptions> = {}) {
     return current === undefined ? [] : [current];
   });
 
+  engine.registerChain('supervisor', (fromUserId) => supervisors[fromUserId] ?? null, {
+    label: 'Supervisors',
+  });
+
   const events: RecordedEvent[] = [];
   for (const name of EVENT_NAMES) {
     engine.on(name, (payload) => {

@@ -27,8 +27,15 @@ import type { IdGenerator } from '../uuid';
 import { validateFlow } from '../validation/validate-flow';
 import { EventBus } from './events';
 import type { EventErrorHandler, ParafEventHandler, ParafEventName } from './events';
-import { ApproverTypeRegistry } from './registry';
-import type { ApproverResolver, ApproverTypeInfo, ApproverTypeMeta } from './registry';
+import { ApproverTypeRegistry, ChainRegistry } from './registry';
+import type {
+  ApproverResolver,
+  ApproverTypeInfo,
+  ApproverTypeMeta,
+  ChainInfo,
+  ChainMeta,
+  ChainResolver,
+} from './registry';
 import { Transaction } from './transaction';
 import type { TransactionServices } from './transaction';
 
@@ -104,6 +111,7 @@ export class ParafEngine {
   private readonly now: () => Date;
   private readonly maxAttempts: number;
   private readonly approverTypes = new ApproverTypeRegistry();
+  private readonly chains = new ChainRegistry();
   private readonly operators = new Map<string, OperatorFunction>();
   private readonly events: EventBus;
   private readonly flowCache = new Map<string, PublishedFlow>();
@@ -117,6 +125,7 @@ export class ParafEngine {
     const isAdmin = options.isAdmin;
     this.services = {
       approverTypes: this.approverTypes,
+      chains: this.chains,
       operators: this.operators,
       generateId: options.generateId ?? uuidv7,
       isAdmin: async (userId, state) =>
@@ -139,6 +148,19 @@ export class ParafEngine {
   /** Registered approver types (including the built-in `user` and `field`) with metadata. */
   getApproverTypes(): ApproverTypeInfo[] {
     return this.approverTypes.list();
+  }
+
+  /**
+   * Registers a chain for `approval-chain` nodes: how to find the next user up from a user,
+   * e.g. their supervisor. Return `null` at the top. Replaces a chain of the same name.
+   */
+  registerChain(name: string, resolver: ChainResolver, meta?: ChainMeta): void {
+    this.chains.register(name, resolver, meta);
+  }
+
+  /** Registered chains with metadata, for the editor. */
+  getChains(): ChainInfo[] {
+    return this.chains.list();
   }
 
   /** Adds a condition operator, e.g. `startsWith`. Built-in operators cannot be replaced. */
@@ -170,6 +192,7 @@ export class ParafEngine {
   async publishFlow(flow: FlowDefinition, options: PublishOptions = {}): Promise<PublishedFlow> {
     const issues = validateFlow(flow, {
       approverTypes: this.approverTypes.names(),
+      chains: this.chains.names(),
       operators: [...this.operators.keys()],
     });
     if (issues.length > 0) throw new FlowValidationError(flow.id, issues);

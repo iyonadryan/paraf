@@ -5,8 +5,7 @@ types, JSON Schema, flow validator, in-memory store, and UUID v7 generator. Zero
 dependencies.
 
 > [!WARNING]
-> Early development. Approval chains, duplicate approver handling, and timeouts are not
-> available yet.
+> Early development. Timeouts and escalation are not available yet.
 
 ## Run a flow
 
@@ -29,6 +28,14 @@ const instance = await engine.start('purchase-request', {
 
 engine.on('approval.required', ({ groups }) => notify(groups.flatMap((g) => g.userIds)));
 await engine.approve(instance.id, 'u12', 'Looks good');
+```
+
+For "walk up the supervisors until a director", register a chain and use an `approval-chain`
+node (`{ type: 'approval-chain', chain: 'supervisor', until: { type: 'role', value: 'director' },
+maxLevels: 5, ... }`):
+
+```ts
+engine.registerChain('supervisor', (userId) => supervisorOf(userId) ?? null);
 ```
 
 Other actions: `reject`, `returnForRevision`, `resubmit`, `delegate`, `cancel`, and

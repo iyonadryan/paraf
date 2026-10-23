@@ -38,6 +38,7 @@ export type {
   InstanceState,
   InstanceStatus,
   Step,
+  StepChainConfig,
   StepConfig,
   StepGroupConfig,
   StepStatus,
@@ -74,6 +75,10 @@ export type {
   ApproverResolver,
   ApproverTypeInfo,
   ApproverTypeMeta,
+  ChainContext,
+  ChainInfo,
+  ChainMeta,
+  ChainResolver,
   ConfigField,
   ConfigOption,
   ResolverContext,
@@ -93,6 +98,7 @@ export type {
 export {
   ActionError,
   ActiveInstanceExistsError,
+  ChainCycleError,
   ConcurrencyError,
   ConditionEvaluationError,
   DelegationError,
@@ -105,10 +111,10 @@ export {
   InvalidArgumentError,
   InvalidStateError,
   NotAuthorizedError,
-  NotImplementedError,
   ParafError,
   StepEntryError,
   UnknownApproverTypeError,
+  UnknownChainError,
 } from './errors';
 export type { ActionErrorContext, StepEntryErrorContext } from './errors';
 

@@ -17,6 +17,55 @@ export interface ResolverContext {
   groupId: string;
 }
 
+/** What a chain resolver knows about the instance it walks the chain for. */
+export interface ChainContext extends Omit<ResolverContext, 'groupId'> {
+  /** Level being resolved, starting at 1. */
+  level: number;
+}
+
+/**
+ * Returns the next user up a chain from `fromUserId` (e.g. their supervisor), or `null` at the
+ * top of the chain.
+ */
+export type ChainResolver = (
+  fromUserId: string,
+  context: ChainContext,
+) => string | null | undefined | Promise<string | null | undefined>;
+
+/** Editor metadata of a chain. */
+export interface ChainMeta {
+  /** Human-readable name, e.g. "Supervisors". */
+  label?: string;
+}
+
+/** A registered chain as reported by `engine.getChains()`. */
+export interface ChainInfo {
+  name: string;
+  label: string;
+}
+
+/** Chains known to an engine. */
+export class ChainRegistry {
+  private readonly chains = new Map<string, { resolver: ChainResolver; meta: ChainMeta }>();
+
+  register(name: string, resolver: ChainResolver, meta: ChainMeta = {}): void {
+    if (name === '') throw new TypeError('Paraf: a chain needs a non-empty name.');
+    this.chains.set(name, { resolver, meta });
+  }
+
+  get(name: string): ChainResolver | undefined {
+    return this.chains.get(name)?.resolver;
+  }
+
+  names(): string[] {
+    return [...this.chains.keys()];
+  }
+
+  list(): ChainInfo[] {
+    return [...this.chains].map(([name, { meta }]) => ({ name, label: meta.label ?? name }));
+  }
+}
+
 /**
  * Turns an approver entry into user IDs, e.g. all users with a role. May return the same ID
  * more than once; results are deduplicated.

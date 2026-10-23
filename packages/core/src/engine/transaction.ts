@@ -1,21 +1,24 @@
-import { evaluateCondition, isTruthy } from '../condition/evaluate';
+import { evaluateCondition, isTruthy, readPath } from '../condition/evaluate';
 import type { OperatorFunction } from '../condition/evaluate';
 import {
+  ChainCycleError,
   DelegationError,
   EmptyApproversError,
   InsufficientApproversError,
   InvalidArgumentError,
   InvalidStateError,
   NotAuthorizedError,
-  NotImplementedError,
   ParafError,
   UnknownApproverTypeError,
+  UnknownChainError,
 } from '../errors';
-import type { ActionErrorContext } from '../errors';
+import type { ActionErrorContext, StepEntryErrorContext } from '../errors';
 import type {
+  ApprovalChainNode,
   ApprovalNode,
   ApproverEntry,
   ApproverGroupRules,
+  DuplicateApproverPolicy,
   FlowDefinition,
   FlowNode,
   ResubmitPolicy,
@@ -26,6 +29,8 @@ import type {
   AuditEntry,
   InstanceState,
   Step,
+  StepChainConfig,
+  StepConfig,
   StepGroupConfig,
   StepStatus,
 } from '../types/instance';
@@ -40,11 +45,12 @@ import type {
   QueuedEvent,
   RequiredApprovers,
 } from './events';
-import type { ApproverTypeRegistry, ResolverContext } from './registry';
+import type { ApproverTypeRegistry, ChainRegistry, ResolverContext } from './registry';
 
 /** Engine parts a transaction needs. */
 export interface TransactionServices {
   approverTypes: ApproverTypeRegistry;
+  chains: ChainRegistry;
   operators: ReadonlyMap<string, OperatorFunction>;
   generateId: IdGenerator;
   isAdmin: (userId: string, state: InstanceState) => Promise<boolean>;
@@ -65,6 +71,18 @@ interface GroupResolution {
   notes: JsonObject;
 }
 
+/** The user found for one chain level. */
+interface ChainLevel {
+  userId: string;
+  stopper: boolean;
+}
+
+/** Why an approval chain ended; recorded in the `chain_completed` audit entry. */
+type ChainEnd = 'until' | 'top' | 'max_levels' | 'fallback';
+
+/** Approval and approval-chain nodes: the nodes that create steps. */
+type StepNode = ApprovalNode | ApprovalChainNode;
+
 const SINGLE_GROUP_ID = 'default';
 
 function groupsOf(node: ApprovalNode): GroupDefinition[] {
@@ -81,6 +99,16 @@ function groupsOf(node: ApprovalNode): GroupDefinition[] {
       fallbackApprovers: node.fallbackApprovers,
     },
   ];
+}
+
+/** The single group of a chain step: one approver per level, or the fallback approvers. */
+function chainGroup(node: ApprovalChainNode): GroupDefinition {
+  return {
+    id: SINGLE_GROUP_ID,
+    approvers: node.fallbackApprovers ?? [],
+    mode: 'any',
+    excludeRequester: node.excludeRequester,
+  };
 }
 
 function defaultRejectPolicy(group: GroupDefinition): StepGroupConfig['rejectPolicy'] {
@@ -317,12 +345,17 @@ export class Transaction {
       throw new NotAuthorizedError('Only an admin can re-resolve approvers', this.context);
     }
     const step = this.requireActiveStep();
-    const node = this.approvalNode(step.nodeId);
+    const node = this.stepNode(step.nodeId);
+    if (node.type === 'approval-chain' && step.config.chain) {
+      await this.reresolveChainLevel(node, step, step.config.chain, actorId);
+      return;
+    }
+
     const added: ApproverChange[] = [];
     const removed: ApproverChange[] = [];
     const taken = new Set<string>();
-
-    for (const definition of groupsOf(node)) {
+    const definitions = node.type === 'approval' ? groupsOf(node) : [chainGroup(node)];
+    for (const definition of definitions) {
       const group = this.groupConfig(step, definition.id);
       const groupSlots = () => this.slotsOf(step).filter((slot) => slot.groupId === group.id);
       if (group.status !== 'pending') {
@@ -353,7 +386,7 @@ export class Transaction {
 
       for (const slot of groupSlots()) {
         if (!kept.includes(slot)) {
-          this.state.approvers.splice(this.state.approvers.indexOf(slot), 1);
+          this.removeSlot(slot);
           removed.push({ groupId: group.id, userId: slot.userId });
         }
       }
@@ -368,29 +401,7 @@ export class Transaction {
       for (const slot of groupSlots()) taken.add(slot.userId);
     }
 
-    this.record('reresolved', {
-      step,
-      actorId,
-      metadata: {
-        added: added.map((change) => ({ ...change })),
-        removed: removed.map((change) => ({ ...change })),
-      },
-    });
-    this.emit('approvers.reresolved', () => ({
-      instance: clone(this.instance),
-      step: clone(step),
-      added,
-      removed,
-    }));
-    const notify = step.config.groups
-      .map((group) =>
-        this.requiredFor(
-          group,
-          added.filter((c) => c.groupId === group.id).map((c) => c.userId),
-        ),
-      )
-      .filter((entry) => entry.userIds.length > 0);
-    if (notify.length > 0) this.emitApprovalRequired(step, 'reresolved', notify);
+    this.recordReresolved(step, actorId, added, removed);
     await this.settle(step);
   }
 
@@ -428,34 +439,17 @@ export class Transaction {
         await this.enterApproval(nodeId, node);
         return;
       default:
-        throw new NotImplementedError(
-          `Node "${nodeId}" is an approval-chain node, which is not supported yet.`,
-        );
+        await this.enterChain(nodeId, node);
     }
   }
 
   private async enterApproval(nodeId: string, node: ApprovalNode): Promise<void> {
-    const iteration =
-      Math.max(0, ...this.state.steps.filter((s) => s.nodeId === nodeId).map((s) => s.iteration)) +
-      1;
-    const step: Step = {
-      id: this.services.generateId(),
-      instanceId: this.instance.id,
-      nodeId,
-      iteration,
-      chainLevel: 0,
-      round: this.instance.round,
-      status: 'active',
-      config: {
-        require: node.require ?? 'all',
-        countAcrossGroups: node.countAcrossGroups ?? true,
-        groups: [],
-      },
-      enteredAt: this.now,
-      dueAt: null,
-      completedAt: null,
-    };
-    this.state.steps.push(step);
+    const iteration = this.nextIteration(nodeId);
+    const step = this.newStep(nodeId, iteration, 0, {
+      require: node.require ?? 'all',
+      countAcrossGroups: node.countAcrossGroups ?? true,
+      groups: [],
+    });
     this.instance.currentStepId = step.id;
 
     const taken = new Set<string>();
@@ -489,13 +483,23 @@ export class Transaction {
       });
     }
 
-    this.record('step_entered', { step, metadata: { iteration, groups: summary } });
+    await this.openStep(step, node.duplicateApprover, { iteration, groups: summary });
+  }
+
+  /** Records a freshly built step, applies duplicate-approver handling, and settles it. */
+  private async openStep(
+    step: Step,
+    duplicateApprover: DuplicateApproverPolicy | undefined,
+    metadata: JsonObject,
+  ): Promise<void> {
+    this.record('step_entered', { step, metadata });
     for (const group of step.config.groups) {
       if (group.status === 'skipped') {
         this.record('skipped', { step, metadata: { groupId: group.id, reason: 'no_approvers' } });
       }
     }
     this.emit('step.entered', () => ({ instance: clone(this.instance), step: clone(step) }));
+    if (duplicateApprover === 'auto-approve') this.autoApprove(step);
 
     await this.settle(step);
     if (step.status === 'active') {
@@ -527,8 +531,14 @@ export class Transaction {
     const allSkipped = step.config.groups.every((group) => group.status === 'skipped');
     this.completeStep(step, outcome === 'approved' && allSkipped ? 'skipped' : outcome);
     if (allSkipped) this.record('skipped', { step, metadata: { reason: 'no_approvers' } });
-    const node = this.approvalNode(step.nodeId);
-    await this.enterNode(outcome === 'approved' ? node.next : node.onReject);
+    const node = this.stepNode(step.nodeId);
+    if (outcome === 'rejected') {
+      await this.enterNode(node.onReject);
+    } else if (node.type === 'approval-chain') {
+      await this.continueChain(node, step);
+    } else {
+      await this.enterNode(node.next);
+    }
   }
 
   private completeStep(step: Step, status: StepStatus): void {
@@ -542,24 +552,326 @@ export class Transaction {
   }
 
   // ---------------------------------------------------------------------------------------
+  // Approval chains
+  // ---------------------------------------------------------------------------------------
+
+  private async enterChain(nodeId: string, node: ApprovalChainNode): Promise<void> {
+    const iteration = this.nextIteration(nodeId);
+    const origin = this.chainOrigin(node);
+    if (origin === null) {
+      await this.enterEmptyChain(nodeId, node, iteration);
+      return;
+    }
+    await this.walkChain(nodeId, node, iteration, 1, origin);
+  }
+
+  /** The user the chain starts from: the requester, or a user ID read from the document. */
+  private chainOrigin(node: ApprovalChainNode): string | null {
+    if (node.from === undefined || node.from === 'requester') return this.instance.requesterId;
+    const value = readPath(this.instance.document, node.from.field);
+    return typeof value === 'string' && value !== '' ? value : null;
+  }
+
+  /** Resolves level `level` from `fromUserId` and opens its step, or ends the chain. */
+  private async walkChain(
+    nodeId: string,
+    node: ApprovalChainNode,
+    iteration: number,
+    level: number,
+    fromUserId: string,
+  ): Promise<void> {
+    if (level > node.maxLevels) {
+      await this.finishChain(nodeId, node, 'max_levels', level - 1);
+      return;
+    }
+    const found = await this.resolveChainLevel(nodeId, node, iteration, level, fromUserId);
+    if (found === null) {
+      if (level === 1) await this.enterEmptyChain(nodeId, node, iteration);
+      else await this.finishChain(nodeId, node, 'top', level - 1);
+      return;
+    }
+    if (found.stopper && !(node.includeStopper ?? true)) {
+      await this.finishChain(nodeId, node, 'until', level - 1);
+      return;
+    }
+
+    const chain: StepChainConfig = { fromUserId, userId: found.userId, stopper: found.stopper };
+    const step = this.newStep(nodeId, iteration, level, this.chainStepConfig(node, chain));
+    if (node.excludeRequester && found.userId === this.instance.requesterId) {
+      // The requester's own level: recorded as skipped, the chain continues above them.
+      step.status = 'skipped';
+      step.completedAt = this.now;
+      this.groupConfig(step, SINGLE_GROUP_ID).status = 'skipped';
+      this.record('skipped', {
+        step,
+        metadata: { level, userId: found.userId, reason: 'requester' },
+      });
+      await this.continueChain(node, step);
+      return;
+    }
+
+    this.instance.currentStepId = step.id;
+    this.state.approvers.push(
+      this.newSlot(step, SINGLE_GROUP_ID, found.userId, this.chainSource(node, level), null),
+    );
+    await this.openStep(step, node.duplicateApprover, {
+      iteration,
+      level,
+      groups: [{ groupId: SINGLE_GROUP_ID, approvers: [found.userId] }],
+    });
+  }
+
+  /** After a level is approved or skipped: end at the stopper, or walk one level up. */
+  private async continueChain(node: ApprovalChainNode, step: Step): Promise<void> {
+    const chain = step.config.chain;
+    if (!chain) {
+      await this.finishChain(step.nodeId, node, 'fallback', step.chainLevel);
+    } else if (chain.stopper) {
+      await this.finishChain(step.nodeId, node, 'until', step.chainLevel);
+    } else {
+      await this.walkChain(step.nodeId, node, step.iteration, step.chainLevel + 1, chain.userId);
+    }
+  }
+
+  private async finishChain(
+    nodeId: string,
+    node: ApprovalChainNode,
+    reason: ChainEnd,
+    levels: number,
+  ): Promise<void> {
+    this.record('chain_completed', { nodeId, metadata: { reason, levels } });
+    await this.enterNode(node.next);
+  }
+
+  /** No first level (no origin or no one above it): apply `onEmptyApprovers`. */
+  private async enterEmptyChain(
+    nodeId: string,
+    node: ApprovalChainNode,
+    iteration: number,
+  ): Promise<void> {
+    const policy = node.onEmptyApprovers ?? 'error';
+    if (policy === 'skip') {
+      this.record('skipped', { nodeId, metadata: { reason: 'empty_chain' } });
+      await this.enterNode(node.next);
+      return;
+    }
+    const context = this.stepEntryContext(nodeId, SINGLE_GROUP_ID);
+    if (policy === 'error') throw new EmptyApproversError(context);
+
+    const group = chainGroup(node);
+    const users = await this.resolveEntries(
+      nodeId,
+      group.id,
+      group.excludeRequester ?? false,
+      group.approvers,
+      new Set(),
+      false,
+    );
+    if (users.size === 0) throw new EmptyApproversError(context);
+    const step = this.newStep(nodeId, iteration, 1, this.chainStepConfig(node, undefined));
+    this.instance.currentStepId = step.id;
+    for (const [userId, source] of users) {
+      this.state.approvers.push(this.newSlot(step, SINGLE_GROUP_ID, userId, source, null));
+    }
+    await this.openStep(step, node.duplicateApprover, {
+      iteration,
+      level: 1,
+      groups: [{ groupId: SINGLE_GROUP_ID, approvers: [...users.keys()], fallback: 'empty' }],
+    });
+  }
+
+  /**
+   * Asks the chain for the user above `fromUserId`. Returns `null` at the top of the chain and
+   * throws `ChainCycleError` when the chain returns a user it already passed.
+   */
+  private async resolveChainLevel(
+    nodeId: string,
+    node: ApprovalChainNode,
+    iteration: number,
+    level: number,
+    fromUserId: string,
+  ): Promise<ChainLevel | null> {
+    const context = this.stepEntryContext(nodeId, SINGLE_GROUP_ID);
+    const resolver = this.services.chains.get(node.chain);
+    if (!resolver) throw new UnknownChainError(node.chain, context);
+
+    const userId = await resolver(fromUserId, { ...this.instanceContext(nodeId), level });
+    if (typeof userId !== 'string' || userId === '') return null;
+
+    const path = this.chainPath(nodeId, iteration, level, fromUserId);
+    if (path.includes(userId)) throw new ChainCycleError([...path, userId], context);
+
+    const until = node.until;
+    const stopper =
+      until !== undefined &&
+      (await this.resolveEntries(nodeId, SINGLE_GROUP_ID, false, [until], new Set(), false)).has(
+        userId,
+      );
+    return { userId, stopper };
+  }
+
+  /** Users the chain passed before `level`, starting with its origin. */
+  private chainPath(
+    nodeId: string,
+    iteration: number,
+    level: number,
+    fromUserId: string,
+  ): string[] {
+    const earlier: StepChainConfig[] = [];
+    for (const step of this.state.steps) {
+      const chain = step.config.chain;
+      if (
+        chain &&
+        step.nodeId === nodeId &&
+        step.iteration === iteration &&
+        step.chainLevel < level
+      ) {
+        earlier.push(chain);
+      }
+    }
+    const [first] = earlier;
+    return first === undefined
+      ? [fromUserId]
+      : [first.fromUserId, ...earlier.map((chain) => chain.userId)];
+  }
+
+  /** Recomputes the user of the active chain level, e.g. after the org chart changed. */
+  private async reresolveChainLevel(
+    node: ApprovalChainNode,
+    step: Step,
+    chain: StepChainConfig,
+    actorId: string,
+  ): Promise<void> {
+    const found = await this.resolveChainLevel(
+      step.nodeId,
+      node,
+      step.iteration,
+      step.chainLevel,
+      chain.fromUserId,
+    );
+    const ends: ChainEnd | null =
+      found === null ? 'top' : found.stopper && !(node.includeStopper ?? true) ? 'until' : null;
+    const excluded =
+      found !== null &&
+      node.excludeRequester === true &&
+      found.userId === this.instance.requesterId;
+    const userId = found !== null && ends === null && !excluded ? found.userId : null;
+    if (found !== null) {
+      chain.userId = found.userId;
+      chain.stopper = found.stopper;
+    }
+
+    const added: ApproverChange[] = [];
+    const removed: ApproverChange[] = [];
+    const slots = this.slotsOf(step);
+    for (const slot of slots) {
+      if (slot.status === 'pending' && slot.delegatedFrom === null && slot.userId !== userId) {
+        this.removeSlot(slot);
+        removed.push({ groupId: slot.groupId, userId: slot.userId });
+      }
+    }
+    if (userId !== null && !slots.some((slot) => slot.userId === userId)) {
+      this.state.approvers.push(
+        this.newSlot(step, SINGLE_GROUP_ID, userId, this.chainSource(node, step.chainLevel), null),
+      );
+      added.push({ groupId: SINGLE_GROUP_ID, userId });
+    }
+    this.recordReresolved(step, actorId, added, removed);
+
+    if (countedSlots(this.slotsOf(step), SINGLE_GROUP_ID).length > 0) {
+      await this.settle(step);
+      return;
+    }
+    // Nobody is left to approve this level.
+    this.groupConfig(step, SINGLE_GROUP_ID).status = 'skipped';
+    this.completeStep(step, 'skipped');
+    this.record('skipped', {
+      step,
+      metadata: { level: step.chainLevel, reason: ends ?? 'requester' },
+    });
+    if (ends === null) await this.continueChain(node, step);
+    else await this.finishChain(step.nodeId, node, ends, step.chainLevel - 1);
+  }
+
+  private chainStepConfig(node: ApprovalChainNode, chain: StepChainConfig | undefined): StepConfig {
+    return {
+      require: 'all',
+      countAcrossGroups: true,
+      groups: [
+        {
+          id: SINGLE_GROUP_ID,
+          mode: 'any',
+          rejectPolicy: 'any',
+          excludeRequester: node.excludeRequester ?? false,
+          status: 'pending',
+        },
+      ],
+      ...(chain === undefined ? {} : { chain }),
+    };
+  }
+
+  private chainSource(node: ApprovalChainNode, level: number): ApproverEntry {
+    return { type: 'chain', chain: node.chain, level };
+  }
+
+  // ---------------------------------------------------------------------------------------
+  // Duplicate approvers
+  // ---------------------------------------------------------------------------------------
+
+  /**
+   * Approves the slots of users who already approved another node in this round (not a
+   * returned step, and not an earlier visit of the same node). Runs on a freshly opened step,
+   * whose slots are all pending.
+   */
+  private autoApprove(step: Step): void {
+    const byUser = new Map<string, { groupIds: string[]; fromStepId: string }>();
+    for (const slot of this.slotsOf(step)) {
+      const earlier = this.state.approvers.find(
+        (other) =>
+          other.userId === slot.userId &&
+          other.status === 'approved' &&
+          this.state.steps.some(
+            (candidate) =>
+              candidate.id === other.stepId &&
+              candidate.round === step.round &&
+              candidate.nodeId !== step.nodeId &&
+              candidate.status !== 'returned',
+          ),
+      );
+      if (!earlier) continue;
+      const fromStepId = earlier.autoFromStep ?? earlier.stepId;
+      slot.status = 'approved';
+      slot.decidedAt = this.now;
+      slot.autoFromStep = fromStepId;
+      const entry = byUser.get(slot.userId) ?? { groupIds: [], fromStepId };
+      entry.groupIds.push(slot.groupId);
+      byUser.set(slot.userId, entry);
+    }
+    for (const [userId, { groupIds, fromStepId }] of byUser) {
+      this.record('auto_approved', { step, metadata: { userId, groupIds, fromStepId } });
+    }
+  }
+
+  // ---------------------------------------------------------------------------------------
   // Approver resolution
   // ---------------------------------------------------------------------------------------
 
-  private resolverContext(step: Step, groupId: string): ResolverContext {
+  /** What resolvers get to know about the instance (copies, so changes are ignored). */
+  private instanceContext(nodeId: string): Omit<ResolverContext, 'groupId'> {
     return {
       requester: { id: this.instance.requesterId },
       subject: { ...this.instance.subject },
       document: clone(this.instance.document),
       instance: clone(this.instance),
-      nodeId: step.nodeId,
-      groupId,
+      nodeId,
     };
   }
 
   /** Resolves entries into users (first source wins), applying the group's filters. */
   private async resolveEntries(
-    step: Step,
-    group: GroupDefinition,
+    nodeId: string,
+    groupId: string,
+    excludeRequester: boolean,
     entries: readonly ApproverEntry[],
     taken: ReadonlySet<string>,
     exclusive: boolean,
@@ -568,16 +880,12 @@ export class Transaction {
     for (const entry of entries) {
       const resolver = this.services.approverTypes.get(entry.type);
       if (!resolver) {
-        throw new UnknownApproverTypeError(entry.type, {
-          ...this.context,
-          nodeId: step.nodeId,
-          groupId: group.id,
-        });
+        throw new UnknownApproverTypeError(entry.type, this.stepEntryContext(nodeId, groupId));
       }
-      const ids = await resolver(clone(entry), this.resolverContext(step, group.id));
+      const ids = await resolver(clone(entry), { ...this.instanceContext(nodeId), groupId });
       for (const id of ids) {
         if (typeof id !== 'string' || id === '' || users.has(id)) continue;
-        if (group.excludeRequester && id === this.instance.requesterId) continue;
+        if (excludeRequester && id === this.instance.requesterId) continue;
         if (exclusive && taken.has(id)) continue;
         users.set(id, clone(entry));
       }
@@ -591,7 +899,14 @@ export class Transaction {
     taken: ReadonlySet<string>,
     countAcrossGroups: boolean,
   ): Promise<Map<string, ApproverEntry | null>> {
-    return this.resolveEntries(step, group, group.approvers, taken, !countAcrossGroups);
+    return this.resolveEntries(
+      step.nodeId,
+      group.id,
+      group.excludeRequester ?? false,
+      group.approvers,
+      taken,
+      !countAcrossGroups,
+    );
   }
 
   /**
@@ -604,12 +919,19 @@ export class Transaction {
     candidates: Map<string, ApproverEntry | null>,
     kept: ReadonlySet<string>,
   ): Promise<GroupResolution> {
-    const context = { ...this.context, nodeId: step.nodeId, groupId: group.id };
+    const context = this.stepEntryContext(step.nodeId, group.id);
     const users = new Map(candidates);
     const notes: JsonObject = {};
     const size = () => new Set([...users.keys(), ...kept]).size;
     const fallback = async () =>
-      this.resolveEntries(step, group, group.fallbackApprovers ?? [], new Set(), false);
+      this.resolveEntries(
+        step.nodeId,
+        group.id,
+        group.excludeRequester ?? false,
+        group.fallbackApprovers ?? [],
+        new Set(),
+        false,
+      );
 
     if (size() === 0) {
       const policy = group.onEmptyApprovers ?? 'error';
@@ -669,12 +991,39 @@ export class Transaction {
     return step;
   }
 
-  private approvalNode(nodeId: string): ApprovalNode {
+  private stepNode(nodeId: string): StepNode {
     const node = this.flow.nodes[nodeId];
-    if (node?.type !== 'approval') {
+    if (node?.type !== 'approval' && node?.type !== 'approval-chain') {
       throw new ParafError('UNKNOWN_NODE', `Node "${nodeId}" is not an approval node.`);
     }
     return node;
+  }
+
+  private nextIteration(nodeId: string): number {
+    const visits = this.state.steps.filter((step) => step.nodeId === nodeId);
+    return Math.max(0, ...visits.map((step) => step.iteration)) + 1;
+  }
+
+  private newStep(nodeId: string, iteration: number, chainLevel: number, config: StepConfig): Step {
+    const step: Step = {
+      id: this.services.generateId(),
+      instanceId: this.instance.id,
+      nodeId,
+      iteration,
+      chainLevel,
+      round: this.instance.round,
+      status: 'active',
+      config,
+      enteredAt: this.now,
+      dueAt: null,
+      completedAt: null,
+    };
+    this.state.steps.push(step);
+    return step;
+  }
+
+  private stepEntryContext(nodeId: string, groupId: string): StepEntryErrorContext {
+    return { ...this.context, nodeId, groupId };
   }
 
   private groupConfig(step: Step, groupId: string): StepGroupConfig {
@@ -713,6 +1062,10 @@ export class Transaction {
     };
   }
 
+  private removeSlot(slot: ApproverSlot): void {
+    this.state.approvers.splice(this.state.approvers.indexOf(slot), 1);
+  }
+
   private markInProgress(): void {
     if (this.instance.status === 'pending') this.instance.status = 'in_progress';
   }
@@ -723,6 +1076,37 @@ export class Transaction {
       ...(group.label === undefined ? {} : { label: group.label }),
       userIds,
     };
+  }
+
+  private recordReresolved(
+    step: Step,
+    actorId: string,
+    added: ApproverChange[],
+    removed: ApproverChange[],
+  ): void {
+    this.record('reresolved', {
+      step,
+      actorId,
+      metadata: {
+        added: added.map((change) => ({ ...change })),
+        removed: removed.map((change) => ({ ...change })),
+      },
+    });
+    this.emit('approvers.reresolved', () => ({
+      instance: clone(this.instance),
+      step: clone(step),
+      added,
+      removed,
+    }));
+    const notify = step.config.groups
+      .map((group) =>
+        this.requiredFor(
+          group,
+          added.filter((change) => change.groupId === group.id).map((change) => change.userId),
+        ),
+      )
+      .filter((entry) => entry.userIds.length > 0);
+    if (notify.length > 0) this.emitApprovalRequired(step, 'reresolved', notify);
   }
 
   private emitApprovalRequired(

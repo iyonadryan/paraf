@@ -42,6 +42,30 @@ describe('flows stored without validation', () => {
     ).rejects.toThrow(EmptyApproversError);
   });
 
+  it('treats a missing fallback list of an approval chain as empty', async () => {
+    const t = setup();
+    await storeUnvalidated(t, {
+      id: 'chain',
+      name: 'Chain',
+      start: 'chain',
+      nodes: {
+        chain: {
+          type: 'approval-chain',
+          chain: 'supervisor',
+          maxLevels: 3,
+          onEmptyApprovers: 'fallback',
+          next: 'approved',
+          onReject: 'rejected',
+        },
+        ...END_NODES,
+      },
+    });
+    // ceo1 has no supervisor, so the chain is empty and the (missing) fallback is used.
+    await expect(
+      t.engine.start('chain', { subject: { type: 'doc', id: '1' }, requester: { id: 'ceo1' } }),
+    ).rejects.toThrow(EmptyApproversError);
+  });
+
   it('reports a reference to a missing node', async () => {
     const t = setup();
     await storeUnvalidated(t, {
