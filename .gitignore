@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+examples/*/dist/
+
+# Test & coverage
+coverage/
+.vitest-cache/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# Local database data from docker-compose
+.docker-data/
+*.sqlite
+*.db
+
+# Packed tarballs from `npm pack`
+*.tgz
+
+# Caches
+.cache/
+.eslintcache
+.turbo/
+.vite/
+
+# Editors & IDEs
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
