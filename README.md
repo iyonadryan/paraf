@@ -5,7 +5,8 @@
 > _Paraf_ (Indonesian): the initials you sign on a document to approve it.
 
 > [!WARNING]
-> Paraf is in early development. The API is not stable yet and packages are not published to npm. Follow the [roadmap](#roadmap) for progress.
+> Paraf is at `0.x`: the API may still change before `1.0.0`. Changes are listed in each
+> package's `CHANGELOG.md`.
 
 Paraf lets you define approval flows as JSON, run them with a headless engine, store them in PostgreSQL or MySQL, and let admins edit them visually with a drag-and-drop editor. It doesn't assume anything about your users, roles, or org chart: you plug in how approvers are found.
 
@@ -20,9 +21,6 @@ Paraf lets you define approval flows as JSON, run them with a headless engine, s
 | Express, Fastify, or Hono (Paraf Studio) | Only to mount the studio in your app: Express 4.18+, Fastify 5+, Hono 4.8+ |
 
 ## Installation
-
-> [!NOTE]
-> The packages are not on npm yet; these commands work from the first release (`0.1.0`).
 
 Install the engine, plus the adapter for your database:
 
@@ -68,19 +66,22 @@ Using pnpm or Yarn? Replace `npm install` with `pnpm add` or `yarn add` (and `--
 
 ## Quick look
 
-> Planned API. Subject to change before `1.0.0`.
-
 ```ts
 import { createEngine } from '@paraf/core';
 import { PostgresStore } from '@paraf/postgres';
 
-const engine = createEngine({ store: new PostgresStore(pool) });
+const store = new PostgresStore(pool);
+await store.migrate(); // creates the paraf_* tables
+const engine = createEngine({ store });
 
 // Tell Paraf how to find approvers in YOUR app
 engine.registerApproverType('role', async ({ value }) => {
   const roles = Array.isArray(value) ? value : [value];
   return db.users.findIdsByRoles(roles);
 });
+engine.registerApproverType('supervisor', async ({ level }, { requester }) =>
+  db.users.findManagerIds(requester.id, Number(level ?? 1)),
+);
 
 // Publish a flow: supervisor first, then director
 await engine.publishFlow({
@@ -136,6 +137,26 @@ if (process.env.NODE_ENV !== 'production') {
 See [`@paraf/studio`](./packages/studio/README.md) for mounting it in Express, Fastify, or Hono,
 and for editing the flows of staging or production safely.
 
+## Documentation
+
+- [`@paraf/core`](./packages/core/README.md): concepts, approver resolvers (role, group,
+  supervisor), modes, parallel groups and reject policies with examples, approval chains,
+  conditions, linking approvals to your tables, actions, timeouts, events, errors, and the API
+  reference.
+- [`@paraf/postgres`](./packages/postgres/README.md) and [`@paraf/mysql`](./packages/mysql/README.md):
+  setup, migrations, and a diagram of the tables.
+- [`@paraf/editor`](./packages/editor/README.md): the React editor and the progress view.
+- [`@paraf/studio`](./packages/studio/README.md): Paraf Studio.
+
+## Examples
+
+| Example                                           | Shows                                                                    |
+| ------------------------------------------------- | ------------------------------------------------------------------------ |
+| [`basic-node`](./examples/basic-node)             | The engine in a Node.js script, in memory: resolvers, a chain, events    |
+| [`express-postgres`](./examples/express-postgres) | An Express API on PostgreSQL: your tables, subjects, inbox, Paraf Studio |
+| [`editor-demo`](./examples/editor-demo)           | The editor and the progress view in a Vite app                           |
+| [`studio-demo`](./examples/studio-demo)           | Paraf Studio on its own port                                             |
+
 ## Roadmap
 
 - [x] Foundation: monorepo, flow schema, validator, UUID v7
@@ -145,7 +166,7 @@ and for editing the flows of staging or production safely.
 - [x] PostgreSQL and MySQL adapters
 - [x] Visual editor and progress view
 - [x] Paraf Studio (own port, Express, Fastify, Hono), version history and rollback
-- [ ] Docs and first release (`0.1.0`)
+- [x] Docs and first release (`0.1.0`)
 
 ## Contributing
 
@@ -182,6 +203,19 @@ End-to-end tests (Playwright) for both demos:
 pnpm --filter editor-demo exec playwright install chromium   # once
 pnpm build && pnpm test:e2e
 ```
+
+### Releasing
+
+Versions and changelogs are managed with [Changesets](https://github.com/changesets/changesets):
+
+```sh
+pnpm changeset            # with each change: pick the packages and the SemVer bump
+pnpm version-packages     # bump versions and write the CHANGELOG.md files
+pnpm release              # build, then publish to npm (needs `npm login` with access to @paraf)
+```
+
+Publish through pnpm (as `pnpm release` does), not `npm publish`: pnpm replaces the
+`workspace:` version ranges between the packages with real ones.
 
 ## License
 

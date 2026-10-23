@@ -1,9 +1,18 @@
 {
   "name": "@paraf/postgres",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "PostgreSQL storage adapter for the Paraf approval workflow engine.",
   "license": "MIT",
   "author": "Iyon",
+  "homepage": "https://github.com/iyonadryan/paraf/tree/main/packages/postgres#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iyonadryan/paraf.git",
+    "directory": "packages/postgres"
+  },
+  "bugs": {
+    "url": "https://github.com/iyonadryan/paraf/issues"
+  },
   "keywords": [
     "approval",
     "workflow",
@@ -31,7 +40,8 @@
   },
   "files": [
     "dist",
-    "schema.postgres.sql"
+    "schema.postgres.sql",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=24"
@@ -56,5 +66,8 @@
     "pg": "^8.23.1",
     "tsup": "^9.0.0",
     "vitest": "^5.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

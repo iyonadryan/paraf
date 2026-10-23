@@ -1,9 +1,18 @@
 {
   "name": "@paraf/editor",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Visual flow editor (React) for the Paraf approval workflow engine.",
   "license": "MIT",
   "author": "Iyon",
+  "homepage": "https://github.com/iyonadryan/paraf/tree/main/packages/editor#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iyonadryan/paraf.git",
+    "directory": "packages/editor"
+  },
+  "bugs": {
+    "url": "https://github.com/iyonadryan/paraf/issues"
+  },
   "keywords": [
     "approval",
     "workflow",
@@ -33,7 +42,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=24"
@@ -66,5 +76,8 @@
     "react-dom": "^19.3.1",
     "tsup": "^9.0.0",
     "vitest": "^5.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

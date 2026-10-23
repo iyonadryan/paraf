@@ -72,6 +72,11 @@ jobs:
       - name: Test (core, editor, studio, MemoryStore, PostgreSQL, MySQL)
         run: pnpm test:coverage
 
+      - name: Examples (basic Node.js, Express + PostgreSQL)
+        run: |
+          pnpm --filter basic-node start
+          pnpm --filter express-postgres smoke
+
       - name: Install Playwright Chromium
         run: pnpm --filter editor-demo exec playwright install --with-deps chromium
 

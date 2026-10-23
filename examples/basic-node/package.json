@@ -1,0 +1,17 @@
+{
+  "name": "basic-node",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Paraf engine in plain Node.js with a MemoryStore: a purchase request from start to finish.",
+  "type": "module",
+  "scripts": {
+    "start": "node index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@paraf/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2"
+  }
+}

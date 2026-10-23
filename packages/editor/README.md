@@ -95,6 +95,23 @@ import { ParafProgress } from '@paraf/editor';
 Steps that are done, waiting (with who approved so far, per level or group), rejected, or not
 reached yet, the path taken, the document's variables, and the history.
 
+| Prop                 | Description                                                            |
+| -------------------- | ---------------------------------------------------------------------- |
+| `flow`               | The flow version the instance runs on (`engine.getFlow(id, version)`). |
+| `state`              | `engine.getInstance(id)`: the instance, its steps and approver slots.  |
+| `history`            | `engine.getHistory(id)`: the audit trail.                              |
+| `userName`           | Display name of a user ID; default: the ID.                            |
+| `formatDate`         | Formats timestamps; default like "Oct 21 · 09:12".                     |
+| `headerStart`        | Rendered at the start of the header.                                   |
+| `messages`           | Replaces texts, as for the editor.                                     |
+| `className`, `style` | On the root element.                                                   |
+
+## Exports
+
+`ParafEditor`, `ParafProgress`, `defaultMessages`, and the types `ParafEditorProps`,
+`ParafProgressProps`, `EditorPublishOptions`, and `Messages`. The stylesheet is
+`@paraf/editor/style.css`.
+
 ## Styling and text
 
 Import `@paraf/editor/style.css` once. Colors, fonts and radii are CSS variables (`--paraf-*`)

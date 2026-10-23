@@ -1,9 +1,18 @@
 {
   "name": "@paraf/studio",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Paraf Studio: the flow editor as a ready-made web app, on its own port or mounted in Express, Fastify, or Hono.",
   "license": "MIT",
   "author": "Iyon",
+  "homepage": "https://github.com/iyonadryan/paraf/tree/main/packages/studio#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iyonadryan/paraf.git",
+    "directory": "packages/studio"
+  },
+  "bugs": {
+    "url": "https://github.com/iyonadryan/paraf/issues"
+  },
   "keywords": [
     "approval",
     "workflow",
@@ -62,7 +71,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=24"
@@ -115,5 +125,8 @@
     "typescript": "~6.0.3",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
