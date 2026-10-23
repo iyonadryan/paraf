@@ -4,7 +4,12 @@
     "noEmit": true,
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@paraf/core": ["../../packages/core/src/index.ts"],
+      "@paraf/postgres": ["../../packages/postgres/src/index.ts"],
+      "@paraf/studio/express": ["../../packages/studio/src/express.ts"]
+    }
   },
   "include": ["*.ts"]
 }

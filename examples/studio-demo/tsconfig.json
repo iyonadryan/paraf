@@ -4,7 +4,11 @@
     "noEmit": true,
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@paraf/core": ["../../packages/core/src/index.ts"],
+      "@paraf/studio": ["../../packages/studio/src/index.ts"]
+    }
   },
   "include": ["*.ts", "e2e"]
 }
