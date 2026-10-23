@@ -8,7 +8,7 @@ export interface RequiredApprovers {
 }
 
 /** Why approvers are being asked to act. */
-export type ApprovalRequiredReason = 'entered' | 'delegated' | 'reresolved';
+export type ApprovalRequiredReason = 'entered' | 'delegated' | 'reresolved' | 'escalated';
 
 /** A change to the approvers of a group made by `reresolveApprovers`. */
 export interface ApproverChange {
@@ -42,6 +42,11 @@ export interface ParafEvents {
     added: ApproverChange[];
     removed: ApproverChange[];
   };
+  /**
+   * A step passed its `due_at` and was escalated. `approvers` (possibly empty) can now decide
+   * the whole step.
+   */
+  'timeout.escalated': { instance: Instance; step: Step; approvers: string[] };
 }
 
 /** Name of an engine event. */

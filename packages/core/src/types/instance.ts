@@ -71,6 +71,11 @@ export interface StepGroupConfig {
   rejectPolicy: RejectPolicy;
   excludeRequester: boolean;
   status: GroupStatus;
+  /**
+   * Set on the escalation group added by a timeout: one decision of its approvers decides the
+   * whole step, whatever the other groups and `require` say.
+   */
+  override?: boolean;
 }
 
 /** Snapshot of the rules a step runs with. */

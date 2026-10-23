@@ -1,4 +1,5 @@
 import { evaluateCondition, isTruthy, readPath } from '../condition/evaluate';
+import { addDuration, parseDuration } from '../duration';
 import type { OperatorFunction } from '../condition/evaluate';
 import {
   ChainCycleError,
@@ -84,6 +85,9 @@ type ChainEnd = 'until' | 'top' | 'max_levels' | 'fallback';
 type StepNode = ApprovalNode | ApprovalChainNode;
 
 const SINGLE_GROUP_ID = 'default';
+
+/** Group added by a timeout escalation. Not a valid slug, so it never clashes with flow groups. */
+export const ESCALATION_GROUP_ID = '$escalation';
 
 function groupsOf(node: ApprovalNode): GroupDefinition[] {
   if (node.groups) return node.groups;
@@ -405,6 +409,59 @@ export class Transaction {
     await this.settle(step);
   }
 
+  /**
+   * Escalates the active step if it is due at `now`: the node's `timeout.to` approvers join as
+   * an override group (one decision of theirs decides the step) and the deadline is cleared, so
+   * a step escalates once. Returns `false` when there is nothing to do (e.g. the step changed
+   * since it was found).
+   */
+  async escalate(now: Date): Promise<boolean> {
+    const step = this.activeStep();
+    if (!step || step.dueAt === null || step.dueAt > now) return false;
+    const dueAt = step.dueAt;
+    step.dueAt = null;
+
+    const timeout = this.stepNode(step.nodeId).timeout;
+    const excludeRequester = step.config.groups.some((group) => group.excludeRequester);
+    const users = await this.resolveEntries(
+      step.nodeId,
+      ESCALATION_GROUP_ID,
+      excludeRequester,
+      timeout?.to ?? [],
+      new Set(),
+      false,
+    );
+    const group: StepGroupConfig = {
+      id: ESCALATION_GROUP_ID,
+      mode: 'any',
+      rejectPolicy: 'any',
+      excludeRequester,
+      status: 'pending',
+      override: true,
+    };
+    if (users.size > 0) {
+      step.config.groups.push(group);
+      for (const [userId, source] of users) {
+        this.state.approvers.push(this.newSlot(step, group.id, userId, source, null));
+      }
+    }
+
+    const approvers = [...users.keys()];
+    this.record('escalated', {
+      step,
+      metadata: { approvers, dueAt: dueAt.toISOString() },
+    });
+    this.emit('timeout.escalated', () => ({
+      instance: clone(this.instance),
+      step: clone(step),
+      approvers,
+    }));
+    if (users.size > 0) {
+      this.emitApprovalRequired(step, 'escalated', [this.requiredFor(group, approvers)]);
+    }
+    return true;
+  }
+
   // ---------------------------------------------------------------------------------------
   // Flow traversal
   // ---------------------------------------------------------------------------------------
@@ -601,6 +658,7 @@ export class Transaction {
       // The requester's own level: recorded as skipped, the chain continues above them.
       step.status = 'skipped';
       step.completedAt = this.now;
+      step.dueAt = null;
       this.groupConfig(step, SINGLE_GROUP_ID).status = 'skipped';
       this.record('skipped', {
         step,
@@ -1004,7 +1062,10 @@ export class Transaction {
     return Math.max(0, ...visits.map((step) => step.iteration)) + 1;
   }
 
+  /** Adds an active step; its `dueAt` comes from the node's `timeout`. */
   private newStep(nodeId: string, iteration: number, chainLevel: number, config: StepConfig): Step {
+    const timeout = this.stepNode(nodeId).timeout;
+    const duration = timeout && parseDuration(timeout.after);
     const step: Step = {
       id: this.services.generateId(),
       instanceId: this.instance.id,
@@ -1015,7 +1076,7 @@ export class Transaction {
       status: 'active',
       config,
       enteredAt: this.now,
-      dueAt: null,
+      dueAt: duration ? addDuration(this.now, duration) : null,
       completedAt: null,
     };
     this.state.steps.push(step);

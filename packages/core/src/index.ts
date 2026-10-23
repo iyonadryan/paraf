@@ -61,6 +61,7 @@ export type {
   PublishOptions,
   ReturnOptions,
   StartOptions,
+  TimeoutResult,
 } from './engine/engine';
 export type {
   ApprovalRequiredReason,

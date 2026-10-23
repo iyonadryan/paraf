@@ -81,6 +81,14 @@ export interface ReturnOptions {
   resubmitPolicy?: ResubmitPolicy;
 }
 
+/** Outcome of {@link ParafEngine.processTimeouts}. */
+export interface TimeoutResult {
+  /** Steps that were escalated. */
+  escalated: { instanceId: string; stepId: string }[];
+  /** Instances that could not be processed, with the error. */
+  failed: { instanceId: string; error: unknown }[];
+}
+
 /** Options of {@link ParafEngine.publishFlow}. */
 export interface PublishOptions {
   /** Who published the version. */
@@ -357,6 +365,39 @@ export class ParafEngine {
     return this.run('reresolveApprovers', instanceId, actorId, (tx) => tx.reresolve(actorId));
   }
 
+  /**
+   * Escalates every step whose `due_at` has passed (see the node's `timeout`). The engine runs
+   * no timers: call this periodically from a cron job, queue, or scheduler. Each step escalates
+   * once. A failure on one instance does not stop the others; it is reported in `failed`.
+   *
+   * @param now the current time. Default: the engine clock.
+   */
+  async processTimeouts(now: Date = this.now()): Promise<TimeoutResult> {
+    const result: TimeoutResult = { escalated: [], failed: [] };
+    for (const { instance } of await this.store.findTimedOut(now)) {
+      const outcome = { escalated: false, stepId: '' };
+      try {
+        await this.run(
+          'processTimeouts',
+          instance.id,
+          null,
+          async (tx) => {
+            outcome.stepId = tx.instance.currentStepId ?? '';
+            outcome.escalated = await tx.escalate(now);
+            return outcome.escalated;
+          },
+          now,
+        );
+        if (outcome.escalated) {
+          result.escalated.push({ instanceId: instance.id, stepId: outcome.stepId });
+        }
+      } catch (error) {
+        result.failed.push({ instanceId: instance.id, error });
+      }
+    }
+    return result;
+  }
+
   // ---------------------------------------------------------------------------------------
   // Queries
   // ---------------------------------------------------------------------------------------
@@ -397,28 +438,36 @@ export class ParafEngine {
 
   /**
    * Runs an action with optimistic locking: load, apply on a copy, save if nobody changed the
-   * instance meanwhile, otherwise retry. Events are emitted after a successful save.
+   * instance meanwhile, otherwise retry. Events are emitted after a successful save. When
+   * `apply` returns `false` there is nothing to save.
    */
   private async run(
     action: string,
     instanceId: string,
-    userId: string,
-    apply: (tx: Transaction) => Promise<void>,
+    userId: string | null,
+    apply: (tx: Transaction) => Promise<unknown>,
+    at?: Date,
   ): Promise<Instance> {
-    const context: ActionErrorContext = { action, instanceId, userId };
+    const context: ActionErrorContext = {
+      action,
+      instanceId,
+      ...(userId === null ? {} : { userId }),
+    };
     for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
       const state = await this.store.getInstance(instanceId);
       if (!state) throw new InstanceNotFoundError(instanceId);
       const flow = await this.getFlowVersion(state.instance.flowId, state.instance.flowVersion);
       const expectedRevision = state.instance.revision;
-      const tx = new Transaction(state, flow, this.now(), this.services, context);
+      const tx = new Transaction(state, flow, at ?? this.now(), this.services, context);
 
+      let changed: unknown;
       try {
-        await apply(tx);
+        changed = await apply(tx);
       } catch (error) {
         if (error instanceof StepEntryError) await this.recordStepFailure(tx, error, userId);
         throw error;
       }
+      if (changed === false) return clone(tx.instance);
 
       tx.instance.revision = expectedRevision + 1;
       tx.instance.updatedAt = tx.now;
@@ -434,7 +483,7 @@ export class ParafEngine {
   private async recordStepFailure(
     tx: Transaction,
     error: StepEntryError,
-    userId: string,
+    userId: string | null,
   ): Promise<void> {
     await this.store.appendAudit([
       {

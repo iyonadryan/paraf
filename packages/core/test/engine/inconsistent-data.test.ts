@@ -66,6 +66,23 @@ describe('flows stored without validation', () => {
     ).rejects.toThrow(EmptyApproversError);
   });
 
+  it('ignores a timeout whose duration cannot be parsed', async () => {
+    const t = setup();
+    await storeUnvalidated(
+      t,
+      singleStepFlow({
+        approvers: [{ type: 'user', value: 'x1' }],
+        mode: 'any',
+        timeout: { after: 'three days', action: 'escalate', to: [{ type: 'user', value: 'x2' }] },
+      }) as never,
+    );
+    const instance = await t.engine.start('single', {
+      subject: { type: 'doc', id: '1' },
+      requester: { id: 'u7' },
+    });
+    expect((await t.state(instance.id)).steps[0]?.dueAt).toBeNull();
+  });
+
   it('reports a reference to a missing node', async () => {
     const t = setup();
     await storeUnvalidated(t, {
@@ -112,6 +129,19 @@ describe('inconsistent instance state', () => {
     });
     await t.engine.resubmit(instance.id, 'u7');
     expect(await t.activeNode(instance.id)).toBe('supervisor');
+  });
+
+  it('escalates to nobody when a due step belongs to a node without timeout', async () => {
+    const t = setup();
+    const instance = await t.run(twoLevelFlow);
+    await tamper(t, instance.id, (state) => {
+      state.steps[0].dueAt = new Date('2026-01-01T00:00:00Z');
+    });
+    const result = await t.engine.processTimeouts(new Date('2026-01-02T00:00:00Z'));
+    expect(result.escalated).toHaveLength(1);
+    expect((await t.engine.getHistory(instance.id)).slice(-1)[0]?.metadata).toMatchObject({
+      approvers: [],
+    });
   });
 
   it('refuses to continue a step whose node is not an approval node', async () => {

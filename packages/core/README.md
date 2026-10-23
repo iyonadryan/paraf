@@ -5,7 +5,7 @@ types, JSON Schema, flow validator, in-memory store, and UUID v7 generator. Zero
 dependencies.
 
 > [!WARNING]
-> Early development. Timeouts and escalation are not available yet.
+> Early development. Database adapters and the visual editor are not available yet.
 
 ## Run a flow
 
@@ -36,6 +36,14 @@ maxLevels: 5, ... }`):
 
 ```ts
 engine.registerChain('supervisor', (userId) => supervisorOf(userId) ?? null);
+```
+
+Timeouts (`timeout: { after: 'P3D', action: 'escalate', to: [...] }`) set a `dueAt` on each
+step. The engine runs no timers; call `processTimeouts` from your scheduler. An escalated step
+can then be decided by any one of the `to` approvers.
+
+```ts
+cron.schedule('*/5 * * * *', () => engine.processTimeouts());
 ```
 
 Other actions: `reject`, `returnForRevision`, `resubmit`, `delegate`, `cancel`, and

@@ -41,10 +41,10 @@ export function decideGroup(group: StepGroupConfig, slots: readonly ApproverSlot
   return 'pending';
 }
 
-/** Groups the node's `require` needs. */
-export function requiredGroups(step: Step): number {
-  const { require, groups } = step.config;
-  if (require === 'all') return groups.length;
+/** Groups the node's `require` needs, out of `count` regular groups. */
+export function requiredGroups(step: Step, count: number): number {
+  const { require } = step.config;
+  if (require === 'all') return count;
   if (require === 'any') return 1;
   return require.minimum;
 }
@@ -52,6 +52,7 @@ export function requiredGroups(step: Step): number {
 /**
  * Re-evaluates every pending group of the step (updating `config.groups[].status`) and returns
  * the step outcome, or `null` while it is still undecided. Skipped groups count as satisfied.
+ * A decided escalation (override) group decides the step on its own.
  */
 export function evaluateStep(
   step: Step,
@@ -60,10 +61,14 @@ export function evaluateStep(
   for (const group of step.config.groups) {
     if (group.status === 'pending') group.status = decideGroup(group, slots);
   }
-  const statuses = step.config.groups.map((group) => group.status);
+  const override = step.config.groups.find((group) => group.override && group.status !== 'pending');
+  if (override) return override.status === 'approved' ? 'approved' : 'rejected';
+
+  const regular = step.config.groups.filter((group) => !group.override);
+  const statuses = regular.map((group) => group.status);
   const satisfied = statuses.filter((status) => status === 'approved' || status === 'skipped');
   const undecided = statuses.filter((status) => status === 'pending');
-  const required = requiredGroups(step);
+  const required = requiredGroups(step, regular.length);
 
   if (satisfied.length >= required) return 'approved';
   if (satisfied.length + undecided.length < required) return 'rejected';

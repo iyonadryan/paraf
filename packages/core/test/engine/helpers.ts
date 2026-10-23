@@ -60,6 +60,7 @@ const EVENT_NAMES: ParafEventName[] = [
   'instance.completed',
   'instance.returned',
   'approvers.reresolved',
+  'timeout.escalated',
 ];
 
 export interface RecordedEvent<E extends ParafEventName = ParafEventName> {
