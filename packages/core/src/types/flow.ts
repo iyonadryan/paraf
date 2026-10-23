@@ -254,3 +254,8 @@ export interface FlowDefinition {
   /** Node positions for the editor; ignored by the engine. */
   layout?: Record<string, NodePosition>;
 }
+
+/** A flow definition as stored: always has a `version`. */
+export interface PublishedFlow extends FlowDefinition {
+  version: number;
+}

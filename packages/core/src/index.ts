@@ -21,11 +21,28 @@ export type {
   InsufficientApproversPolicy,
   MultiGroupApprovalNode,
   NodePosition,
+  PublishedFlow,
   RejectPolicy,
   ResubmitPolicy,
   SingleGroupApprovalNode,
   TimeoutConfig,
 } from './types/flow';
+export { ACTIVE_INSTANCE_STATUSES } from './types/instance';
+export type {
+  ApproverSlot,
+  ApproverStatus,
+  AuditAction,
+  AuditEntry,
+  GroupStatus,
+  Instance,
+  InstanceState,
+  InstanceStatus,
+  Step,
+  StepConfig,
+  StepGroupConfig,
+  StepStatus,
+  Subject,
+} from './types/instance';
 
 export { flowSchema } from './schema/flow-schema';
 
@@ -33,7 +50,67 @@ export { validateFlow } from './validation/validate-flow';
 export type { ValidateFlowOptions } from './validation/validate-flow';
 export type { FlowValidationCode, FlowValidationIssue } from './validation/issues';
 
-export { FlowValidationError, ParafError } from './errors';
+export { evaluateCondition } from './condition/evaluate';
+export type { OperatorFunction } from './condition/evaluate';
+
+export { createEngine, ParafEngine } from './engine/engine';
+export type {
+  AdminCheck,
+  EngineOptions,
+  PublishOptions,
+  ReturnOptions,
+  StartOptions,
+} from './engine/engine';
+export type {
+  ApprovalRequiredReason,
+  ApproverChange,
+  EventErrorHandler,
+  ParafEventHandler,
+  ParafEventName,
+  ParafEvents,
+  RequiredApprovers,
+} from './engine/events';
+export type {
+  ApproverResolver,
+  ApproverTypeInfo,
+  ApproverTypeMeta,
+  ConfigField,
+  ConfigOption,
+  ResolverContext,
+} from './engine/registry';
+
+export { MemoryStore } from './store/memory-store';
+export type {
+  FlowSummary,
+  FlowVersionMeta,
+  InstanceQuery,
+  PageQuery,
+  Paginated,
+  ParafStore,
+  PendingItem,
+} from './store/types';
+
+export {
+  ActionError,
+  ActiveInstanceExistsError,
+  ConcurrencyError,
+  ConditionEvaluationError,
+  DelegationError,
+  EmptyApproversError,
+  FlowNotFoundError,
+  FlowValidationError,
+  FlowVersionExistsError,
+  InstanceNotFoundError,
+  InsufficientApproversError,
+  InvalidArgumentError,
+  InvalidStateError,
+  NotAuthorizedError,
+  NotImplementedError,
+  ParafError,
+  StepEntryError,
+  UnknownApproverTypeError,
+} from './errors';
+export type { ActionErrorContext, StepEntryErrorContext } from './errors';
 
 export { createUuidV7Generator, uuidv7 } from './uuid';
 export type { IdGenerator, UuidV7GeneratorOptions } from './uuid';

@@ -90,7 +90,7 @@ engine.on('instance.completed', async ({ instance }) => {
 ## Roadmap
 
 - [x] Foundation: monorepo, flow schema, validator, UUID v7
-- [ ] Core engine: approvers, modes, groups, actions, versioning, audit, events
+- [x] Core engine: approvers, modes, groups, actions, versioning, audit, events
 - [ ] Approval chains and duplicate approver handling
 - [ ] Timeouts and escalation
 - [ ] PostgreSQL and MySQL adapters

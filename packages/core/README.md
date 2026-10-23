@@ -1,11 +1,39 @@
 # @paraf/core
 
-Headless approval workflow engine for [Paraf](../../README.md): flow definition types, JSON
-Schema, flow validator, and UUID v7 generator. Zero runtime dependencies.
+Headless approval workflow engine for [Paraf](../../README.md): the engine, flow definition
+types, JSON Schema, flow validator, in-memory store, and UUID v7 generator. Zero runtime
+dependencies.
 
 > [!WARNING]
-> Early development. Only the flow format and validator are available so far; the engine is
-> coming in the next phases.
+> Early development. Approval chains, duplicate approver handling, and timeouts are not
+> available yet.
+
+## Run a flow
+
+```ts
+import { createEngine, MemoryStore } from '@paraf/core';
+
+const engine = createEngine({
+  store: new MemoryStore(),
+  isAdmin: (userId) => admins.includes(userId), // may cancel, re-resolve, return
+});
+
+engine.registerApproverType('role', ({ value }) => usersWithRoles(value));
+await engine.publishFlow(flow); // validated, stored as a new version, made active
+
+const instance = await engine.start('purchase-request', {
+  subject: { type: 'purchase_request', id: '42' },
+  requester: { id: 'u7' },
+  document: { amount: 15_000_000 },
+});
+
+engine.on('approval.required', ({ groups }) => notify(groups.flatMap((g) => g.userIds)));
+await engine.approve(instance.id, 'u12', 'Looks good');
+```
+
+Other actions: `reject`, `returnForRevision`, `resubmit`, `delegate`, `cancel`, and
+`reresolveApprovers`. Queries: `getInstance`, `findInstances({ subject })`,
+`findPendingForUser` (inbox), and `getHistory` (audit trail).
 
 ## Validate a flow
 
