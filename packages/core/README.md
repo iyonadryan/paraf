@@ -314,6 +314,87 @@ LEFT JOIN paraf_instances i
 `engine.findInstances({ subject: { type: 'purchase_request', id: '42' } })` returns every
 instance of a record (newest first), including finished ones.
 
+## Approve and reject
+
+With the flow from the [Quick start](#quick-start): the requester's supervisor `s1` decides
+first, then two of the three finance people `f1`, `f2`, `f3` must approve.
+
+```ts
+// What is waiting for s1: their inbox.
+const inbox = await engine.findPendingForUser('s1');
+// inbox.items: [{ instance, stepId, nodeId: 'manager', groupIds, enteredAt, dueAt }]
+const instanceId = inbox.items[0].instance.id;
+
+// Approve. The comment is optional.
+let instance = await engine.approve(instanceId, 's1', 'Looks good');
+instance.status; // 'in_progress': the manager step is done, finance is asked now
+
+// Reject. The comment is required: it tells the requester why.
+instance = await engine.reject(instanceId, 'f1', 'The quote is missing');
+instance.status; // still 'in_progress': f2 and f3 can still make the 2 approvals
+
+await engine.approve(instanceId, 'f2');
+instance = await engine.approve(instanceId, 'f3');
+instance.status; // 'approved'
+```
+
+Whether one decision finishes a step depends on the node's [`mode`](#how-many-must-approve-mode)
+and [`rejectPolicy`](#when-a-group-is-rejected-rejectpolicy). Had `s1` rejected, the manager
+step (`mode: 'any'`) would have been rejected at once and the instance would have followed
+`onReject` to the `rejected` end: `instance.status` would be `'rejected'`.
+
+Every decision returns the updated `Instance`, is written to the audit trail with its comment
+(`engine.getHistory(instanceId)`), and emits [events](#events). React to the outcome there
+rather than after each call, because it may come from any approver, or from a timeout:
+
+```ts
+engine.on('instance.completed', async ({ instance }) => {
+  // instance.status: 'approved', 'rejected', or 'cancelled'
+  await db.purchaseRequests.setStatus(instance.subject.id, instance.status);
+  await notify(instance.requesterId, `Your purchase request was ${instance.status}.`);
+});
+```
+
+A decision that is not allowed throws, and changes nothing:
+
+| Error                   | When                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `NotAuthorizedError`    | the user is not a pending approver of the active step (not asked, or already decided) |
+| `InvalidArgumentError`  | `reject` without a comment                                                            |
+| `InvalidStateError`     | the instance is finished, or returned to the requester                                |
+| `InstanceNotFoundError` | no instance with that ID                                                              |
+
+In an HTTP API, take the user from your login, never from the request body:
+
+```ts
+import { InstanceNotFoundError, NotAuthorizedError, ParafError } from '@paraf/core';
+
+app.post('/approvals/:instanceId/approve', async (req, res) => {
+  const instance = await engine.approve(req.params.instanceId, req.user.id, req.body?.comment);
+  res.json({ status: instance.status });
+});
+
+app.post('/approvals/:instanceId/reject', async (req, res) => {
+  const instance = await engine.reject(req.params.instanceId, req.user.id, req.body?.comment);
+  res.json({ status: instance.status });
+});
+
+// Paraf errors to HTTP statuses (Express 5 passes errors of async handlers here).
+app.use((error, req, res, next) => {
+  const status =
+    error instanceof NotAuthorizedError
+      ? 403
+      : error instanceof InstanceNotFoundError
+        ? 404
+        : error instanceof ParafError
+          ? 400
+          : 500;
+  res.status(status).json({ error: status === 500 ? 'Internal error' : error.message });
+});
+```
+
+[`examples/express-postgres`](../../examples/express-postgres) runs this against PostgreSQL.
+
 ## Actions and who may take them
 
 | Method                                                  | Who                                   | Effect                                                                  |

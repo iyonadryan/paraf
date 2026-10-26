@@ -115,13 +115,18 @@ const instance = await engine.start('purchase-request', {
   document: { amount: 15_000_000 },
 });
 
+// Approvers decide: approve (comment optional) or reject (comment required)
 await engine.approve(instance.id, 'u12', 'Looks good');
+// await engine.reject(instance.id, 'u12', 'Over budget');
 
 // React to changes (send notifications, update your own tables, ...)
 engine.on('instance.completed', async ({ instance }) => {
   await db.purchaseRequests.update(instance.subject.id, { status: instance.status });
 });
 ```
+
+[Approve and reject](./packages/core/README.md#approve-and-reject) walks through a whole
+approval: the approver's inbox, what each decision does, the errors, and an HTTP endpoint.
 
 Edit flows visually with Paraf Studio, which publishes through the same engine (and so to the
 same database). It is off in production by default:
